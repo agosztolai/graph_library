@@ -34,34 +34,34 @@ Examples of standard parameters are included in the graph_params.yaml file.
 ##Currently includes the following graphs and datasets
 
 **barbell** : barbell graph\
-**barbell_asy** : asymmetric barbell graph
-**celegans** :  neural network of neurons and synapses in C. elegans
-**grid** : rectangular grid
-**2grid **: 2 rectangular grids connected by a bottleneck
-**delaunay-grid** : Delaunay triangulation of uniformly spaced points
-**delauney-nonunif** : Delaunay triangulation of nonuniform points (2 Gaussians)
-**dolphin** : directed social network of bottlenose dolphins
-**email** : network of email data from a large European research institution
-**ER** : Erdos-Renyi graph
-**Fan** : Fan's benchmark graph
-**football** : 
-**frucht** : 
-**GN** : Girvan-Newman benchmark
-**gnr** : directed growing network  
-**karate** : Zachary's karate club
-**LFR** : Lancichinetti-Fortunato-Radicchi benchmark  
-**krackhardt** : 
-**miserable** : 
-**netscience**
-**scalefree**    
-**S** : S-curve
-**SM** : small-world network
-**SB**
-**SBM** : stochastic block model
-**swiss-roll** : Swiss-roll dataset
-**torus**
-**tree**
-**tutte**
+**barbell_asy** : asymmetric barbell graph\
+**celegans** :  neural network of neurons and synapses in C. elegans\
+**grid** : rectangular grid\
+**2grid**: 2 rectangular grids connected by a bottleneck\
+**delaunay-grid** : Delaunay triangulation of uniformly spaced points\
+**delauney-nonunif** : Delaunay triangulation of nonuniform points (2 Gaussians)\
+**dolphin** : directed social network of bottlenose dolphins\
+**email** : network of email data from a large European research institution\
+**ER** : Erdos-Renyi graph\
+**Fan** : Fan's benchmark graph\
+**football** : \
+**frucht** : \
+**GN** : Girvan-Newman benchmark\
+**gnr** : directed growing network\
+**karate** : Zachary's karate club\
+**LFR** : Lancichinetti-Fortunato-Radicchi benchmark\ 
+**krackhardt** :\ 
+**miserable** :\ 
+**netscience**\
+**scalefree** \   
+**S** : S-curve\
+**SM** : small-world network\
+**SB**\
+**SBM** : stochastic block model\
+**swiss-roll** : Swiss-roll dataset\
+**torus**\
+**tree**\
+**tutte**\
 
 
 
