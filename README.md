@@ -15,20 +15,19 @@ import graph_library as gl
 gen = gl.graph_generator(whichgraph='barbell', file='graph_params', save=True)
 ```
 
-Generate a dataset in the same way (Swiss-roll in this case)
+## Generate a dataset in the same way (Swiss-roll in this case)
 ```
 gen = gl.graph_generator(whichgraph='swiss-roll', file='graph_params', save=True)
 ```
 
-Then generate a graph G by computing a similarity matrix (k-nearest neighbours in this case)
+## Then generate a graph G by computing a similarity matrix (k-nearest neighbours in this case)
 
 ```
 gen.generate(similarity='knn')
 G = gen.G
 ```
 
-Examples of standard parameters are included in the graph_params.yaml file.
-
+Examples of standard parameters are included in the graph_params.yaml file. The script automatically saves a figure of the graph by default. 
 
 ## Currently includes the following graphs and datasets
 
