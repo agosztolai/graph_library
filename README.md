@@ -2,13 +2,13 @@
 
 Use this script to quickly generate standard datasets and graphs for testing/benchmarking of your code.
 
-##To install
+## To install
 
 ```
 pip install -e . 
 ```
 
-##To generate a graph
+## To generate a graph
 
 ```
 import graph_library as gl
@@ -30,7 +30,7 @@ G = gen.G
 Examples of standard parameters are included in the graph_params.yaml file.
 
 
-##Currently includes the following graphs and datasets
+## Currently includes the following graphs and datasets
 
 **barbell** : barbell graph\
 **barbell_asy** : asymmetric barbell graph\
