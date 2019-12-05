@@ -52,8 +52,8 @@ Examples of standard parameters are included in the graph_params.yaml file.
 **LFR** : Lancichinetti-Fortunato-Radicchi benchmark\ 
 **krackhardt** :\ 
 **miserable** :\ 
-**netscience**\
-**scalefree** \   
+**netscience**:\
+**scalefree**: \   
 **S** : S-curve\
 **SM** : small-world network\
 **SB**\
