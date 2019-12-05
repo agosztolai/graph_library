@@ -33,8 +33,7 @@ Examples of standard parameters are included in the graph_params.yaml file.
 
 ##Currently includes the following graphs and datasets
 
-**barbell** : barbell graph
-
+**barbell** : barbell graph\
 **barbell_asy** : asymmetric barbell graph
 **celegans** :  neural network of neurons and synapses in C. elegans
 **grid** : rectangular grid
