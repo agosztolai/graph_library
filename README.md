@@ -11,20 +11,24 @@ pip install -e .
 ## To generate a graph
 
 ```
-import graph_library as gl
-gen = gl.graph_generator(whichgraph='barbell', file='graph_params', save=True)
+from graph_library import graph_generator as gg
+gg.whichgraph = 'barbell'
+gg.file = 'graph_params'
+G = gg.generate()
 ```
+
+The .gpickle files will be saved in ~/whichgraph/
 
 ## Generate a dataset in the same way (Swiss-roll in this case)
 ```
-gen = gl.graph_generator(whichgraph='swiss-roll', file='graph_params', save=True)
+gg.whichgraph = 'swiss-roll'
+G = gg.generate()
 ```
 
-## Then generate a graph G by computing a similarity matrix (k-nearest neighbours in this case)
+## To also generate a graph by computing a similarity matrix (k-nearest neighbours in this case) use
 
 ```
-gen.generate(similarity='knn')
-G = gen.G
+G = gg.generate(similarity='knn')
 ```
 
 Examples of standard parameters are included in the graph_params.yaml file. The script automatically saves a figure of the graph by default. 
