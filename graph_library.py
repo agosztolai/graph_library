@@ -27,7 +27,7 @@ class graph_generator(object):
         self.color = []
         self.pos = None
         self.save = save
-        self.params = yaml.load(open(paramsfile,'rb'), Loader=yaml.FullLoader)[whichgraph]
+        self.params = yaml.load(open(os.path.join(os.path.dirname(__file__), 'utils',  paramsfile),'rb'), Loader=yaml.FullLoader)[whichgraph]
         self.nsamples = nsamples
         self.outfolder = outfolder
         
