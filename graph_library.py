@@ -20,7 +20,8 @@ import yaml as yaml
 
 class graph_generator(object): 
 
-    def __init__(self, whichgraph='barbell', nsamples = 1, file='graph_params', save=True):
+    def __init__(self, whichgraph='barbell', nsamples=1, file='graph_params',
+                 folder='./', save=True):
 
         self.whichgraph = whichgraph
         self.color = []
@@ -28,6 +29,7 @@ class graph_generator(object):
         self.save = save
         self.params = yaml.load(open('./utils/'+file+'.yaml','rb'), Loader=yaml.FullLoader)[whichgraph]
         self.nsamples = nsamples
+        self.folder = folder
         
         print('\nGraph: ' + whichgraph)
         print('\nParameters:', self.params)
@@ -36,6 +38,13 @@ class graph_generator(object):
     def generate(self, similarity=None, symmetric=True):
         
         self.symmetric=symmetric
+        
+        #create a folder and move into it
+        if self.save:
+            if not os.path.isdir(self.folder + self.whichgraph):
+                os.mkdir(self.folder + self.whichgraph)
+
+            os.chdir(self.folder + self.whichgraph)
             
         for i in range(self.nsamples):
             self.params['counter'] = i
@@ -74,9 +83,9 @@ class graph_generator(object):
              
             #check if graph is connected    
             assert nx.is_connected(self.G), 'Graph is disconnected!'
-                
+            
             #save
-            nx.write_gpickle(self.G, self.G.graph.get('name')+ '_' + str(self.params['counter']) + "_.gpickle")
+            nx.write_gpickle(self.G, self.whichgraph + '_' + str(self.params['counter']) + "_.gpickle")
             
             #plot 2D graph of 3D graph
             if self.save and self.G.graph.get('dim')==3:
