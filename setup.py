@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-from setuptools import setup
-import numpy as np
+from setuptools import setup, find_packages
 
 setup(
         name = 'graph_library',
         version = '1.0',
-        include_dirs = [np.get_include()], #Add Include path of numpy
         packages=['.'],
         install_requires=['numpy', 
                           'scipy', 
@@ -15,4 +13,5 @@ setup(
                           'sklearn',
                           'pyyaml',
                           'matplotlib'],
+        include_package_data = True
       )

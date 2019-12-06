@@ -20,16 +20,16 @@ import yaml as yaml
 
 class graph_generator(object): 
 
-    def __init__(self, whichgraph='barbell', nsamples=1, file='graph_params',
-                 folder='./', save=True):
+    def __init__(self, whichgraph='barbell', nsamples=1, paramsfile='graph_params.yaml',
+                 outfolder='./', save=True):
 
         self.whichgraph = whichgraph
         self.color = []
         self.pos = None
         self.save = save
-        self.params = yaml.load(open('./utils/'+file+'.yaml','rb'), Loader=yaml.FullLoader)[whichgraph]
+        self.params = yaml.load(open(paramsfile,'rb'), Loader=yaml.FullLoader)[whichgraph]
         self.nsamples = nsamples
-        self.folder = folder
+        self.outfolder = outfolder
         
         print('\nGraph: ' + whichgraph)
         print('\nParameters:', self.params)
@@ -41,10 +41,10 @@ class graph_generator(object):
         
         #create a folder and move into it
         if self.save:
-            if not os.path.isdir(self.folder + self.whichgraph):
-                os.mkdir(self.folder + self.whichgraph)
+            if not os.path.isdir(self.outfolder + self.whichgraph):
+                os.mkdir(self.outfolder + self.whichgraph)
 
-            os.chdir(self.folder + self.whichgraph)
+            os.chdir(self.outfolder + self.whichgraph)
             
         for i in range(self.nsamples):
             self.params['counter'] = i

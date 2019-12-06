@@ -11,10 +11,12 @@ pip install -e .
 ### To generate a graph
 
 ```
-from graph_library import graph_generator as gg
+from graph_library import graph_generator
+gg = graph_generator()
 gg.whichgraph = 'barbell'
 gg.file = 'graph_params'
-G = gg.generate()
+gg.generate()
+G = gg.G
 ```
 
 The .gpickle files will be saved in ~/whichgraph/
