@@ -1,3 +1,6 @@
 numpy
 scipy
 networkx
+sklearn
+pyyaml
+matplotlib

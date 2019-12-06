@@ -9,5 +9,10 @@ setup(
         version = '1.0',
         include_dirs = [np.get_include()], #Add Include path of numpy
         packages=['.'],
-        install_requires=['numpy', 'scipy', 'networkx'],
+        install_requires=['numpy', 
+                          'scipy', 
+                          'networkx',
+                          'sklearn',
+                          'pyyaml',
+                          'matplotlib'],
       )
