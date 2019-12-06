@@ -32,10 +32,17 @@ G = gg.generate(similarity='knn')
 ```
 
 ### Default arguments
+```
+whichgraph='barbell' #graph type - see below
+file='graph_params' #parameter file
+folder='./' #output folder
+nsamples=1 #number of of the graph (in case it is stochastically generated, the seed is set in the parameter file)
+save=True #save
+```
 
 Examples of standard parameters are included in the graph_params.yaml file. The script automatically saves a figure of the graph by default. 
 
-## Currently includes the following graphs and datasets
+## Currently includes the following graphs and datasets (whichgraph)
 
 **barbell** : barbell graph\
 **barbell_asy** : asymmetric barbell graph\
