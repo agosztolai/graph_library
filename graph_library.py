@@ -15,86 +15,65 @@ import yaml as yaml
 # =============================================================================
 # Library of standard graphs
 # =============================================================================
-
-barbell : barbell graph
-barbell_asy : asymmetric barbell graph
-celegans:  neural network of neurons and synapses in C. elegans
-grid : rectangular grid
-2grid : 2 rectangular grids connected by a bottleneck
-delaunay-grid : Delaunay triangulation of uniformly spaced points
-delauney-nonunif : Delaunay triangulation of nonuniform points (2 Gaussians)
-dolphin : directed social network of bottlenose dolphins
-email : network of email data from a large European research institution
-ER : Erdos-Renyi graph
-Fan : Fan's benchmark graph
-football : 
-frucht : 
-GN : Girvan-Newman benchmark
-gnr : directed growing network  
-karate : Zachary's karate club
-LFR : Lancichinetti-Fortunato-Radicchi benchmark  
-krackhardt : 
-miserable : 
-netscience
-scalefree    
-S : S-curve
-SM : small-world network
-SB
-SBM : stochastic block model
-swiss-roll : Swiss-roll dataset
-torus
-tree
-tutte
     
 '''
 
 class graph_generator(object): 
 
-    def __init__(self, whichgraph='barbell', file='graph_params', save=True):
+    def __init__(self, whichgraph='barbell', nsamples = 1, file='graph_params', save=True):
 
         self.whichgraph = whichgraph
         self.color = []
         self.pos = None
         self.save = save
         self.params = yaml.load(open('./utils/'+file+'.yaml','rb'), Loader=yaml.FullLoader)[whichgraph]
+        self.nsamples = nsamples
         
         print('\nGraph: ' + whichgraph)
         print('\nParameters:', self.params)
 
-    def generate(self):
-        
-        self.G, tpe = graphs(self.whichgraph, self.params)
-        self.n = nx.number_of_nodes(self.G)
-        
-        if tpe == 'pointcloud':
-            similarity_matrix(self)
-            
-        elif tpe =='graph':
-            if 'pos' not in self.G.nodes[0]:
-                pos = nx.spring_layout(self.G)
-                nx.set_node_attributes(self.G, pos)
-                
-        if 'color' not in self.G.nodes[0]:
-            color = {i: 'k' for i in self.G.nodes}
-            nx.set_node_attributes(self.G, color)   
-            
-        if 'block' in self.G.nodes[0]:
-            old_label = {i: str(self.G.nodes[i]['block']) for i in self.G.nodes}
-            nx.set_node_attributes(self.G, old_label) 
-            G = nx.convert_node_labels_to_integers(self.G, label_attribute='old_label') 
-             
-        assert nx.is_connected(G), 'Graph is disconnected!'
-          
-        
-#        if 'block' in G.nodes[0]:   
-#            for i in G:
-#                G.nodes[i]['old_label'] = str(G.nodes[i]['block'])   
-#        G = nx.convert_node_labels_to_integers(G, label_attribute='old_label')    
-                
-        if self.save and self.G.graph.get('dim')==3:
-            plot_graph_3D(G, params=self.params, save=True)   
 
-        return G 
+    def generate(self, similarity=None, symmetric=True):
+        
+            self.symmetric=symmetric
+            
+        for i in range(self.nsamples):
+            self.params['counter'] = i
+        
+            #generate graph
+            self.G, tpe = graphs(self.whichgraph, self.params)
+        
+            #compute similarity matrix if not assigned    
+            if tpe == 'pointcloud':
+                if similarity!=None:
+                    self.similarity=similarity
+                    similarity_matrix(self)
+            
+            #compute positions if not assigned    
+            elif tpe =='graph':
+                if 'pos' not in self.G.nodes[0]:
+                    pos = nx.spring_layout(self.G)
+                    nx.set_node_attributes(self.G, pos)
+                
+            #set node colors if not assigned    
+            if 'color' not in self.G.nodes[0]:
+                color = {i: 'k' for i in self.G.nodes}
+                nx.set_node_attributes(self.G, color)   
+            
+            #this is for compatibility with PyGenStability
+            if 'block' in self.G.nodes[0]:
+                old_label = {i: str(self.G.nodes[i]['block']) for i in self.G.nodes}
+                nx.set_node_attributes(self.G, old_label) 
+                G = nx.convert_node_labels_to_integers(self.G, label_attribute='old_label') 
+             
+            #check if graph is connected    
+            assert nx.is_connected(G), 'Graph is disconnected!'
+                
+            #plot 2D graph of 3D graph
+            if self.save and self.G.graph.get('dim')==3:
+                plot_graph_3D(G, params=self.params, save=True)   
+
+            return G 
 
 # =============================================================================
 # similarity matrix
@@ -102,10 +81,11 @@ class graph_generator(object):
 
 def similarity_matrix(self):
     
+    n = self.G.number_of_nodes()
     pos = nx.get_node_attributes(self.G,'pos')
     color = nx.get_node_attributes(self.G,'color')
-    pos = np.reshape([pos[i] for i in range(self.n)],(self.n,len(pos[0])))
-    color = [color[i] for i in range(self.n)]
+    pos = np.reshape([pos[i] for i in range(n)],(n,len(pos[0])))
+    color = [color[i] for i in range(n)]
     
     sim = self.params['similarity']
     if sim=='euclidean' or sim=='minkowski':
@@ -124,11 +104,15 @@ def similarity_matrix(self):
                            if 'gamma' in self.params.keys() else 1.0 / pos.shape[1])
         A = rbf_kernel(pos, gamma=self.gamma_)
 
+    if self.symmetric==True:
+        A = check_symmetric(A)
+    
     self.G = nx.from_numpy_matrix(A)  
     
     for i in self.G:
         self.G.nodes[i]['pos'] = pos[i]
         self.G.nodes[i]['color'] = color[i]
+
  
 # =============================================================================
 # graphs
