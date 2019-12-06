@@ -2,13 +2,13 @@
 
 Use this script to quickly generate standard datasets and graphs for testing/benchmarking of your code.
 
-## To install
+### To install
 
 ```
 pip install -e . 
 ```
 
-## To generate a graph
+### To generate a graph
 
 ```
 from graph_library import graph_generator as gg
@@ -19,17 +19,19 @@ G = gg.generate()
 
 The .gpickle files will be saved in ~/whichgraph/
 
-## Generate a dataset in the same way (Swiss-roll in this case)
+### Generate a dataset in the same way (Swiss-roll in this case)
 ```
 gg.whichgraph = 'swiss-roll'
 G = gg.generate()
 ```
 
-## To also generate a graph by computing a similarity matrix (k-nearest neighbours in this case) use
+### To also generate a graph by computing a similarity matrix (k-nearest neighbours in this case) use
 
 ```
 G = gg.generate(similarity='knn')
 ```
+
+### Default arguments
 
 Examples of standard parameters are included in the graph_params.yaml file. The script automatically saves a figure of the graph by default. 
 
