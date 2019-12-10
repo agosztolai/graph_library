@@ -75,7 +75,7 @@ class graph_generator(object):
                 for i in G:
                     G.nodes[i]['old_label'] = str(G.nodes[i]['block'])
 #                nx.set_node_attributes(G, old_label) 
-                G = nx.convert_node_labels_to_integers(G, label_attribute='old_label') 
+#                G = nx.convert_node_labels_to_integers(G, label_attribute='old_label') 
              
             #check if graph is connected    
             assert nx.is_connected(G), 'Graph is disconnected!'
@@ -91,9 +91,10 @@ class graph_generator(object):
             elif self.plot and len(G.node[1]['pos'])==2:
                 fig = plot_graph(G, node_colors='cluster')  
                 fig.savefig(self.outfolder + self.whichgraph + '/' + fname + '.svg')
-        
+                
         if self.nsamples==1:
-            self.G = G
+            self.G = G                
+        
 # =============================================================================
 # similarity matrix
 # =============================================================================
@@ -343,8 +344,11 @@ def graphs(whichgraph, params):
             G[i][j]['weight']= 1.
     
         for i in G:
-            G.nodes[i]['block'] =  str(i) + ' ' + G.nodes[i]['club']
-    
+            if G.nodes[i]['club'] == 'Mr. Hi':
+                G.nodes[i]['block'] = 1#  str(i) + ' ' + G.nodes[i]['club']
+            else:
+                G.nodes[i]['block'] = 0
+                
     elif whichgraph == 'LFR':
         tpe = 'graph'        
         command = params['scriptfolder'] + \
@@ -533,7 +537,7 @@ def plot_graph(G, node_colors='cluster'):
     pos = list(nx.get_node_attributes(G,'pos').values())
 
     if node_colors=='cluster' and 'block' in G.nodes[1]:
-        _labels = list(nx.get_node_attributes(G,'block').values())
+        _labels = list(nx.get_node_attributes(G,'block').values())        
     else:
         _labels = [0] * G.number_of_nodes()
 
