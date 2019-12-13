@@ -26,14 +26,8 @@ class graph_generator(object):
         self.whichgraph = whichgraph
         self.color = []
         self.pos = None
-<<<<<<< HEAD
-        self.save = save
-        #self.params = yaml.load(open(os.path.join(os.path.dirname(__file__), 'utils',  paramsfile),'rb'), Loader=yaml.FullLoader)[whichgraph]
-        self.params = yaml.load(open(paramsfile,'rb'), Loader=yaml.FullLoader)[whichgraph]
-=======
         self.plot = plot
         self.params = yaml.load(open(os.path.join(os.path.dirname(__file__), 'utils',  paramsfile),'rb'), Loader=yaml.FullLoader)[whichgraph]
->>>>>>> 825ed12582eaea03d56a7e52dfb747e54dac4d59
         self.nsamples = nsamples
         self.outfolder = outfolder
         
@@ -81,7 +75,7 @@ class graph_generator(object):
                 for i in G:
                     G.nodes[i]['old_label'] = str(G.nodes[i]['block'])
 #                nx.set_node_attributes(G, old_label) 
-                G = nx.convert_node_labels_to_integers(G, label_attribute='old_label') 
+#                G = nx.convert_node_labels_to_integers(G, label_attribute='old_label') 
              
             #check if graph is connected    
             assert nx.is_connected(G), 'Graph is disconnected!'
@@ -97,23 +91,17 @@ class graph_generator(object):
             elif self.plot and len(G.node[1]['pos'])==2:
                 fig = plot_graph(G, node_colors='cluster')  
                 fig.savefig(self.outfolder + self.whichgraph + '/' + fname + '.svg')
-        
+                
         if self.nsamples==1:
-            self.G = G
+            self.G = G                
+        
 # =============================================================================
 # similarity matrix
 # =============================================================================
 def similarity_matrix(G, params, symmetric=True):
     
-<<<<<<< HEAD
-    graph = self.G.graph.copy()
-    n = self.G.number_of_nodes()
-    pos = nx.get_node_attributes(self.G,'pos')
-    color = nx.get_node_attributes(self.G,'color')
-=======
     n = G.number_of_nodes()
     pos = nx.get_node_attributes(G,'pos')
->>>>>>> 825ed12582eaea03d56a7e52dfb747e54dac4d59
     pos = np.reshape([pos[i] for i in range(n)],(n,len(pos[0])))
     color = nx.get_node_attributes(G,'color')
     color = [color[i] for i in range(n)]
@@ -137,18 +125,9 @@ def similarity_matrix(G, params, symmetric=True):
 
     if symmetric==True:
         A = check_symmetric(A)
-<<<<<<< HEAD
-    print(A) 
-    self.G = nx.from_numpy_matrix(A)  
-    self.G.graph = graph
-    for i in self.G:
-        self.G.nodes[i]['pos'] = pos[i]
-        self.G.nodes[i]['color'] = color[i]
-=======
     
     return A
 
->>>>>>> 825ed12582eaea03d56a7e52dfb747e54dac4d59
  
 # =============================================================================
 # graphs
@@ -365,8 +344,11 @@ def graphs(whichgraph, params):
             G[i][j]['weight']= 1.
     
         for i in G:
-            G.nodes[i]['block'] =  str(i) + ' ' + G.nodes[i]['club']
-    
+            if G.nodes[i]['club'] == 'Mr. Hi':
+                G.nodes[i]['block'] = 1#  str(i) + ' ' + G.nodes[i]['club']
+            else:
+                G.nodes[i]['block'] = 0
+                
     elif whichgraph == 'LFR':
         tpe = 'graph'        
         command = params['scriptfolder'] + \
@@ -477,7 +459,7 @@ def graphs(whichgraph, params):
     elif whichgraph == 'tutte':
         tpe = 'graph'
         G = nx.tutte_graph()  
-
+    
     G.graph['name'] = whichgraph
     
     return G, tpe
@@ -555,7 +537,7 @@ def plot_graph(G, node_colors='cluster'):
     pos = list(nx.get_node_attributes(G,'pos').values())
 
     if node_colors=='cluster' and 'block' in G.nodes[1]:
-        _labels = list(nx.get_node_attributes(G,'block').values())
+        _labels = list(nx.get_node_attributes(G,'block').values())        
     else:
         _labels = [0] * G.number_of_nodes()
 
