@@ -45,19 +45,19 @@ class graph_generator(object):
             self.params['counter'] = i
         
             #generate graph
-            G, self.tpe = graphs(self.whichgraph, self.params)
+            self.G, self.tpe = graphs(self.whichgraph, self.params)
         
             #compute similarity matrix if not assigned    
             if self.tpe == 'pointcloud':
                 if similarity!=None:
                     self.similarity=similarity
-                    A = similarity_matrix(G, self.params, symmetric)
-                    self.A = A
-                    G1 = nx.from_numpy_matrix(A)     
-                    for i in G:
-                        G1.nodes[i]['pos'] = G.node[i]['pos']
-                        G1.nodes[i]['color'] = G.node[i]['color']                    
-                    G = G1  
+                    self.similarity_matrix(symmetric)
+                    #self.A = A
+                    #G1 = nx.from_numpy_matrix(A)     
+                    #for i in self.G:
+                    #    G1.nodes[i]['pos'] = self.G.nodes[i]['pos']
+                    #    G1.nodes[i]['color'] = self.G.nodes[i]['color']                    
+                    #self.G = G1  
                 else:
                     print('Define similarity measure!')
                     break
@@ -70,71 +70,72 @@ class graph_generator(object):
                         G.nodes[i]['pos'] = pos[i]
             
             #this is for compatibility with PyGenStability
-            if 'block' in G.nodes[1]:
+            if 'block' in self.G.nodes[1]:
 #                old_label = {i: str(G.nodes[i]['block']) for i in G.nodes}
-                for i in G:
-                    G.nodes[i]['old_label'] = str(G.nodes[i]['block'])
+                for i in self.G:
+                    self.G.nodes[i]['old_label'] = str(self.G.nodes[i]['block'])
 #                nx.set_node_attributes(G, old_label) 
-                G = nx.convert_node_labels_to_integers(G, label_attribute='old_label') 
+                self.G = nx.convert_node_labels_to_integers(self.G, label_attribute='old_label') 
              
             #check if graph is connected    
-            assert nx.is_connected(G), 'Graph is disconnected!'
+            assert nx.is_connected(self.G), 'Graph is disconnected!'
             
             #save
             fname = self.whichgraph + '_' + str(self.params['counter'])
-            nx.write_gpickle(G, self.outfolder + self.whichgraph + '/' + fname + "_.gpickle")
+            nx.write_gpickle(self.G, self.outfolder + self.whichgraph + '/' + fname + "_.gpickle")
             
             #plot 2D graph or 3D graph
-            if self.plot and len(G.node[1]['pos'])==3:
-                fig = plot_graph_3D(G, node_colors='custom', params=self.params)  
+            if self.plot and len(self.G.nodes[1]['pos'])==3:
+                fig = plot_graph_3D(self.G, node_colors='custom', params=self.params)  
                 fig.savefig(self.outfolder + self.whichgraph + '/' + fname + '.svg')
-            elif self.plot and len(G.node[1]['pos'])==2:
-                fig = plot_graph(G, node_colors='cluster')  
+            elif self.plot and len(self.G.nodes[1]['pos'])==2:
+                fig = plot_graph(self.G, node_colors='cluster')  
                 fig.savefig(self.outfolder + self.whichgraph + '/' + fname + '.svg')
         
-        if self.nsamples==1:
-            self.G = G
-# =============================================================================
-# similarity matrix
-# =============================================================================
-def similarity_matrix(G, params, symmetric=True):
-    
-    graph = self.G.graph.copy()
-    n = self.G.number_of_nodes()
-    pos = nx.get_node_attributes(self.G,'pos')
-    color = nx.get_node_attributes(self.G,'color')
-    pos = np.reshape([pos[i] for i in range(n)],(n,len(pos[0])))
-    color = nx.get_node_attributes(G,'color')
-    color = [color[i] for i in range(n)]
-       
-    sim = params['similarity']
-    if sim=='euclidean' or sim=='minkowski':
-        A = squareform(pdist(pos, sim))
-    
-    elif sim=='knn':
-        A = skn.kneighbors_graph(pos, params['k'], mode='connectivity', metric='minkowski', p=2, metric_params=None, n_jobs=-1)
-        A = A.todense()
-    
-    elif sim=='radius':
-        A = skn.radius_neighbors_graph(pos, params['radius'], mode='connectivity', metric='minkowski', p=2, metric_params=None, n_jobs=-1)
-        A = A.todense()
-    
-    elif sim=='rbf':    
-        gamma_ = (params['gamma']
-                           if 'gamma' in params.keys() else 1.0 / pos.shape[1])
-        A = rbf_kernel(pos, gamma=gamma_)
+    # =============================================================================
+    # similarity matrix
+    # =============================================================================
+    def similarity_matrix(self, symmetric=True):
+        
+        graph = self.G.graph.copy()
+        n = self.G.number_of_nodes()
 
-    if symmetric==True:
-        A = check_symmetric(A)
+        pos = nx.get_node_attributes(self.G,'pos')
+        pos = np.reshape([pos[i] for i in range(n)],(n,len(pos[0])))
 
-    self.G = nx.from_numpy_matrix(A)  
-    self.G.graph = graph
-    for i in self.G:
-        self.G.nodes[i]['pos'] = pos[i]
-        self.G.nodes[i]['color'] = color[i]
-    
-    return A
- 
+        color = nx.get_node_attributes(self.G,'color')
+        color = [color[i] for i in range(n)]
+
+        params = self.params 
+
+        sim = params['similarity']
+        if sim=='euclidean' or sim=='minkowski':
+            A = squareform(pdist(pos, sim))
+        
+        elif sim=='knn':
+            A = skn.kneighbors_graph(pos, params['k'], mode='connectivity', metric='minkowski', p=2, metric_params=None, n_jobs=-1)
+            A = A.todense()
+        
+        elif sim=='radius':
+            A = skn.radius_neighbors_graph(pos, params['radius'], mode='connectivity', metric='minkowski', p=2, metric_params=None, n_jobs=-1)
+            A = A.todense()
+        
+        elif sim=='rbf':    
+            gamma_ = (params['gamma']
+                               if 'gamma' in params.keys() else 1.0 / pos.shape[1])
+            A = rbf_kernel(pos, gamma=gamma_)
+
+        if symmetric==True:
+            A = check_symmetric(A)
+
+        self.G = nx.from_numpy_matrix(A)  
+        self.G.graph = graph
+        for i in self.G:
+            self.G.nodes[i]['pos'] = pos[i]
+            self.G.nodes[i]['color'] = color[i]
+         
+        #return A
+     
 # =============================================================================
 # graphs
 # =============================================================================
