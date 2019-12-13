@@ -27,7 +27,8 @@ class graph_generator(object):
         self.color = []
         self.pos = None
         self.save = save
-        self.params = yaml.load(open(os.path.join(os.path.dirname(__file__), 'utils',  paramsfile),'rb'), Loader=yaml.FullLoader)[whichgraph]
+        #self.params = yaml.load(open(os.path.join(os.path.dirname(__file__), 'utils',  paramsfile),'rb'), Loader=yaml.FullLoader)[whichgraph]
+        self.params = yaml.load(open(paramsfile,'rb'), Loader=yaml.FullLoader)[whichgraph]
         self.nsamples = nsamples
         self.outfolder = outfolder
         
@@ -98,6 +99,7 @@ class graph_generator(object):
 
 def similarity_matrix(self):
     
+    graph = self.G.graph.copy()
     n = self.G.number_of_nodes()
     pos = nx.get_node_attributes(self.G,'pos')
     color = nx.get_node_attributes(self.G,'color')
@@ -123,13 +125,12 @@ def similarity_matrix(self):
 
     if self.symmetric==True:
         A = check_symmetric(A)
-    
+    print(A) 
     self.G = nx.from_numpy_matrix(A)  
-    
+    self.G.graph = graph
     for i in self.G:
         self.G.nodes[i]['pos'] = pos[i]
         self.G.nodes[i]['color'] = color[i]
-
  
 # =============================================================================
 # graphs
@@ -461,7 +462,7 @@ def graphs(whichgraph, params):
     elif whichgraph == 'tutte':
         tpe = 'graph'
         G = nx.tutte_graph()  
-    
+
     G.graph['name'] = whichgraph
     
     return G, tpe
