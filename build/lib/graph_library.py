@@ -20,7 +20,7 @@ import yaml as yaml
 class graph_generator(object): 
 
     def __init__(self, whichgraph='barbell', nsamples=1, paramsfile='graph_params.yaml',
-                 outfolder='./', plot=True):
+                 outfolder=[], plot=True):
 
         self.paramsfile = paramsfile
         self.whichgraph = whichgraph
@@ -29,20 +29,21 @@ class graph_generator(object):
         self.plot = plot
         self.params = yaml.load(open(os.path.join(os.path.dirname(__file__), 'utils',  paramsfile),'rb'), Loader=yaml.FullLoader)[whichgraph]
         self.nsamples = nsamples
-        self.outfolder = outfolder
-        
-        print('\nGraph: ' + whichgraph)
-        print('\nParameters:', self.params)
-
+        if outfolder==[]:            
+            self.outfolder = './' + whichgraph
 
     def generate(self, similarity=None, dim=2, symmetric=True):
         
+        print('\nGraph: ' + self.whichgraph)
+        print('\nParameters:', self.params)
+        
         #create a folder
-        if not os.path.isdir(self.outfolder + self.whichgraph):
-            os.mkdir(self.outfolder + self.whichgraph)
+        if not os.path.isdir(self.outfolder):
+            os.mkdir(self.outfolder)
             
-        for i in range(self.nsamples):
-            self.params['counter'] = i
+        self.params['counter'] = 0    
+        while self.params['counter'] < self.nsamples:
+            self.params['seed'] += 1
         
             #generate graph
             G, self.tpe = graphs(self.whichgraph, self.params)
@@ -65,7 +66,7 @@ class graph_generator(object):
             #compute positions if not assigned    
             elif self.tpe =='graph':
                 if 'pos' not in G.nodes[1]:
-                    pos = nx.spring_layout(G, dim=dim)
+                    pos = nx.spring_layout(G, dim=dim, weight='weight')
                     for i in G:
                         G.nodes[i]['pos'] = pos[i]
             
@@ -75,26 +76,29 @@ class graph_generator(object):
                 for i in G:
                     G.nodes[i]['old_label'] = str(G.nodes[i]['block'])
 #                nx.set_node_attributes(G, old_label) 
-#                G = nx.convert_node_labels_to_integers(G, label_attribute='old_label') 
+                G = nx.convert_node_labels_to_integers(G, label_attribute='old_label') 
              
             #check if graph is connected    
-            assert nx.is_connected(G), 'Graph is disconnected!'
-            
-            #save
-            fname = self.whichgraph + '_' + str(self.params['counter'])
-            nx.write_gpickle(G, self.outfolder + self.whichgraph + '/' + fname + "_.gpickle")
-            
-            #plot 2D graph or 3D graph
-            if self.plot and len(G.node[1]['pos'])==3:
-                fig = plot_graph_3D(G, node_colors='custom', params=self.params)  
-                fig.savefig(self.outfolder + self.whichgraph + '/' + fname + '.svg')
-            elif self.plot and len(G.node[1]['pos'])==2:
-                fig = plot_graph(G, node_colors='cluster')  
-                fig.savefig(self.outfolder + self.whichgraph + '/' + fname + '.svg')
+            if nx.is_connected(G):
+                self.params['counter'] += 1
                 
-        if self.nsamples==1:
-            self.G = G                
+                #save
+                fname = self.whichgraph + '_' + str(self.params['counter'])
+                nx.write_gpickle(G, self.outfolder + '/' + fname + "_.gpickle")
+                
+                #plot 2D graph or 3D graph
+                if self.plot and len(G.node[1]['pos'])==3:
+                    fig = plot_graph_3D(G, node_colors='custom', params=self.params)  
+                    fig.savefig(self.outfolder  + '/' + fname + '.svg')
+                elif self.plot and len(G.node[1]['pos'])==2:
+                    fig = plot_graph(G, node_colors='cluster')  
+                    fig.savefig(self.outfolder + '/' + fname + '.svg')
+            else:
+                print('Graph is disconnected')
+                    
         
+        if self.nsamples==1:
+            self.G = G
 # =============================================================================
 # similarity matrix
 # =============================================================================
@@ -300,8 +304,8 @@ def graphs(whichgraph, params):
         for i,j in G.edges:
             if G.nodes[i]['block'] == G.nodes[j]['block']:
                 G[i][j]['weight'] = params['w_in']
-        else:
-            G[i][j]['weight'] = 2 - params['w_in']
+            else:
+                G[i][j]['weight'] = 2 - params['w_in']
             
         labels_gt = []
         for i in range(params['l']):
@@ -344,11 +348,8 @@ def graphs(whichgraph, params):
             G[i][j]['weight']= 1.
     
         for i in G:
-            if G.nodes[i]['club'] == 'Mr. Hi':
-                G.nodes[i]['block'] = 1#  str(i) + ' ' + G.nodes[i]['club']
-            else:
-                G.nodes[i]['block'] = 0
-                
+            G.nodes[i]['block'] =  str(i) + ' ' + G.nodes[i]['club']
+    
     elif whichgraph == 'LFR':
         tpe = 'graph'        
         command = params['scriptfolder'] + \
@@ -537,7 +538,7 @@ def plot_graph(G, node_colors='cluster'):
     pos = list(nx.get_node_attributes(G,'pos').values())
 
     if node_colors=='cluster' and 'block' in G.nodes[1]:
-        _labels = list(nx.get_node_attributes(G,'block').values())        
+        _labels = list(nx.get_node_attributes(G,'block').values())
     else:
         _labels = [0] * G.number_of_nodes()
 
