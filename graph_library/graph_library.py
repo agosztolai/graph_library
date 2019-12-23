@@ -51,61 +51,59 @@ class GraphGen(object):
             
             try:
                 #generate graph
-                G, self.tpe = graphs(self.whichgraph, self.params)
-                
+                self.G, self.tpe = graphs(self.whichgraph, self.params)
+
                 #compute similarity matrix if not assigned    
                 if self.tpe == 'pointcloud':
                     if similarity!=None:
                         A = self.similarity_matrix(symmetric)
                         self.A = A
-                        G1 = nx.from_numpy_matrix(A)     
+                        G1 = nx.from_numpy_matrix(A)
                         for i in self.G:
                             G1.nodes[i]['pos'] = self.G.nodes[i]['pos']
                             G1.nodes[i]['color'] = self.G.nodes[i]['color']                    
-                        G = G1  
+                        self.G = G1  
                     else:
                         print('Define similarity measure!')
                         break
                     
                 #compute positions if not assigned    
                 elif self.tpe =='graph':
-                    if 'pos' not in G.nodes[1]:
-                        pos = nx.spring_layout(G, dim=dim, weight='weight')
-                        for i in G:
-                            G.nodes[i]['pos'] = pos[i]
+                    if 'pos' not in self.G.nodes[1]:
+                        pos = nx.spring_layout(self.G, dim=dim, weight='weight')
+                        for i in self.G:
+                            self.G.nodes[i]['pos'] = pos[i]
                             
                 #this is for compatibility with PyGenStability
-                if 'block' in G.nodes[1]:
-                    for i in G:
-                        G.nodes[i]['old_label'] = str(G.nodes[i]['block'])
-                    G = nx.convert_node_labels_to_integers(G, label_attribute='old_label') 
+                if 'block' in self.G.nodes[1]:
+                    for i in self.G:
+                        self.G.nodes[i]['old_label'] = str(self.G.nodes[i]['block'])
+                    self.G = nx.convert_node_labels_to_integers(self.G, label_attribute='old_label') 
                     
                 #check if graph is connected    
-                if nx.is_connected(G):
+                if nx.is_connected(self.G):
                     
                     #save
                     fname = self.whichgraph + '_' + str(self.params['counter'])
-                    nx.write_gpickle(G, self.outfolder + '/' + fname + "_.gpickle")
+                    nx.write_gpickle(self.G, self.outfolder + '/' + fname + "_.gpickle")
                     
                     #plot 2D graph or 3D graph
-                    if self.plot and len(G.node[1]['pos'])==3:
-                        fig = plot_graph_3D(G, node_colors='custom', params=self.params)  
+                    if self.plot and len(self.G.nodes[1]['pos'])==3:
+                        fig = plot_graph_3D(self.G, node_colors='custom', params=self.params)  
                         fig.savefig(self.outfolder  + '/' + fname + '.svg')
-                    elif self.plot and len(G.node[1]['pos'])==2:
-                        fig = plot_graph(G, node_colors='cluster')  
+                    elif self.plot and len(self.G.nodes[1]['pos'])==2:
+                        fig = plot_graph(self.G, node_colors='cluster')  
                         fig.savefig(self.outfolder + '/' + fname + '.svg')
                         
                     self.params['counter'] += 1    
                 else:
                     print('Graph is disconnected')
                     
-            except:
-                print('Graph generation failed. Trying again.')
+            except Exception as e:
+                print('Graph generation failed becuase ' + str(e) + ' . Trying again.')
+                self.params['counter'] = self.nsamples + 1
                 
-            if self.nsamples==1:
-                self.G=G
-                
-        
+            self.G.graph['name'] = self.whichgraph 
     # =============================================================================
     # similarity matrix
     # =============================================================================
