@@ -33,16 +33,17 @@ class GraphGen(object):
         if outfolder==[]:            
             self.outfolder = './' + whichgraph
         if 'similarity' not in self.params:
-            self.params['similarity']=None
+            self.params['similarity'] = None
 
-    def generate(self, similarity=None, dim=2, symmetric=True):
+    def generate(self, dim=2, symmetric=True):
         
         print('\nGraph: ' + self.whichgraph)
         print('\nParameters:', self.params)
         
         #create a folder
-        if not os.path.isdir(self.outfolder):
-            os.mkdir(self.outfolder)
+        #if not os.path.isdir(self.outfolder):
+        #    os.mkdir(self.outfolder)
+        self.outfolder = '.'
                 
         self.params['counter'] = 0    
         while self.params['counter'] < self.nsamples:
@@ -55,7 +56,7 @@ class GraphGen(object):
 
                 #compute similarity matrix if not assigned    
                 if self.tpe == 'pointcloud':
-                    if similarity!=None:
+                    if self.params['similarity'] != None:
                         A = self.similarity_matrix(symmetric)
                         self.A = A
                         G1 = nx.from_numpy_matrix(A)
@@ -358,8 +359,10 @@ def graphs(whichgraph, params):
         for i in G:
             if G.nodes[i]['club'] == 'Mr. Hi':
                 G.nodes[i]['block'] = 0
+                G.nodes[i]['color'] = 0
             else:
                 G.nodes[i]['block'] = 1
+                G.nodes[i]['color'] = 1
     
     elif whichgraph == 'LFR':
         tpe = 'graph'        
