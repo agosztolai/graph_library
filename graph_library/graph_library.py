@@ -446,7 +446,10 @@ def graphs(whichgraph, params):
         G = nx.stochastic_block_model(params['sizes'],np.array(params['probs'])/params['sizes'][0], seed=params['seed'])
         for i,j in G.edges:
             G[i][j]['weight'] = 1.
-        
+
+        for u in G:
+            G.nodes[u]['color'] = G.nodes[u]['block']
+
         G = nx.convert_node_labels_to_integers(G, label_attribute='labels_orig')        
 
     elif whichgraph == 'SM':
@@ -455,7 +458,7 @@ def graphs(whichgraph, params):
         
     elif whichgraph == 'swiss-roll':
         tpe = 'pointcloud'
-        pos, color = skd.make_swiss_roll(n_samples=params['n'], noise=params['noise'], random_state=None)    
+        pos, color = skd.make_swiss_roll(n_samples=params['n'], noise=params['noise'], random_state=params['seed'])    
         for i, _pos in enumerate(pos):
             G.add_node(i, pos = _pos, color = color[i])
             
