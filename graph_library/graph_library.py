@@ -173,7 +173,11 @@ def graphs(whichgraph, params):
         G = nx.from_numpy_matrix(A)   
         for i in G:
             G.nodes[i]['block'] = np.mod(i,params['m1'])
-                
+
+    elif whichgraph == 'complete':
+        tpe ='graph'
+        G = nx.complete_graph(params['n'])
+
     elif whichgraph == 'celegans':
         tpe = 'graph'
         from skd.celegans.create_graph import create_celegans 
