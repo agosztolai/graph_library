@@ -33,16 +33,17 @@ class GraphGen(object):
         if outfolder==[]:            
             self.outfolder = './' + whichgraph
         if 'similarity' not in self.params:
-            self.params['similarity']=None
+            self.params['similarity'] = None
 
-    def generate(self, similarity=None, dim=2, symmetric=True):
+    def generate(self, dim=2, symmetric=True):
         
         print('\nGraph: ' + self.whichgraph)
         print('\nParameters:', self.params)
         
         #create a folder
-        if not os.path.isdir(self.outfolder):
-            os.mkdir(self.outfolder)
+        #if not os.path.isdir(self.outfolder):
+        #    os.mkdir(self.outfolder)
+        self.outfolder = '.'
                 
         self.params['counter'] = 0    
         while self.params['counter'] < self.nsamples:
@@ -51,61 +52,59 @@ class GraphGen(object):
             
             try:
                 #generate graph
-                G, self.tpe = graphs(self.whichgraph, self.params)
-                
+                self.G, self.tpe = graphs(self.whichgraph, self.params)
+
                 #compute similarity matrix if not assigned    
                 if self.tpe == 'pointcloud':
-                    if similarity!=None:
+                    if self.params['similarity'] != None:
                         A = self.similarity_matrix(symmetric)
                         self.A = A
-                        G1 = nx.from_numpy_matrix(A)     
+                        G1 = nx.from_numpy_matrix(A)
                         for i in self.G:
                             G1.nodes[i]['pos'] = self.G.nodes[i]['pos']
                             G1.nodes[i]['color'] = self.G.nodes[i]['color']                    
-                        G = G1  
+                        self.G = G1  
                     else:
                         print('Define similarity measure!')
                         break
                     
                 #compute positions if not assigned    
                 elif self.tpe =='graph':
-                    if 'pos' not in G.nodes[1]:
-                        pos = nx.spring_layout(G, dim=dim, weight='weight')
-                        for i in G:
-                            G.nodes[i]['pos'] = pos[i]
+                    if 'pos' not in self.G.nodes[1]:
+                        pos = nx.spring_layout(self.G, dim=dim, weight='weight')
+                        for i in self.G:
+                            self.G.nodes[i]['pos'] = pos[i]
                             
                 #this is for compatibility with PyGenStability
-                if 'block' in G.nodes[1]:
-                    for i in G:
-                        G.nodes[i]['old_label'] = str(G.nodes[i]['block'])
-                    G = nx.convert_node_labels_to_integers(G, label_attribute='old_label') 
+                if 'block' in self.G.nodes[1]:
+                    for i in self.G:
+                        self.G.nodes[i]['old_label'] = str(self.G.nodes[i]['block'])
+                    self.G = nx.convert_node_labels_to_integers(self.G, label_attribute='old_label') 
                     
                 #check if graph is connected    
-                if nx.is_connected(G):
+                if nx.is_connected(self.G):
                     
                     #save
                     fname = self.whichgraph + '_' + str(self.params['counter'])
-                    nx.write_gpickle(G, self.outfolder + '/' + fname + "_.gpickle")
+                    nx.write_gpickle(self.G, self.outfolder + '/' + fname + "_.gpickle")
                     
                     #plot 2D graph or 3D graph
-                    if self.plot and len(G.node[1]['pos'])==3:
-                        fig = plot_graph_3D(G, node_colors='custom', params=self.params)  
+                    if self.plot and len(self.G.nodes[1]['pos'])==3:
+                        fig = plot_graph_3D(self.G, node_colors='custom', params=self.params)  
                         fig.savefig(self.outfolder  + '/' + fname + '.svg')
-                    elif self.plot and len(G.node[1]['pos'])==2:
-                        fig = plot_graph(G, node_colors='cluster')  
+                    elif self.plot and len(self.G.nodes[1]['pos'])==2:
+                        fig = plot_graph(self.G, node_colors='cluster')  
                         fig.savefig(self.outfolder + '/' + fname + '.svg')
                         
                     self.params['counter'] += 1    
                 else:
                     print('Graph is disconnected')
                     
-            except:
-                print('Graph generation failed. Trying again.')
+            except Exception as e:
+                print('Graph generation failed becuase ' + str(e) + ' . Trying again.')
+                self.params['counter'] = self.nsamples + 1
                 
-            if self.nsamples==1:
-                self.G=G
-                
-        
+            self.G.graph['name'] = self.whichgraph 
     # =============================================================================
     # similarity matrix
     # =============================================================================
@@ -174,7 +173,11 @@ def graphs(whichgraph, params):
         G = nx.from_numpy_matrix(A)   
         for i in G:
             G.nodes[i]['block'] = np.mod(i,params['m1'])
-                
+
+    elif whichgraph == 'complete':
+        tpe ='graph'
+        G = nx.complete_graph(params['n'])
+
     elif whichgraph == 'celegans':
         tpe = 'graph'
         from skd.celegans.create_graph import create_celegans 
@@ -360,8 +363,10 @@ def graphs(whichgraph, params):
         for i in G:
             if G.nodes[i]['club'] == 'Mr. Hi':
                 G.nodes[i]['block'] = 0
+                G.nodes[i]['color'] = 0
             else:
                 G.nodes[i]['block'] = 1
+                G.nodes[i]['color'] = 1
     
     elif whichgraph == 'LFR':
         tpe = 'graph'        
@@ -445,7 +450,10 @@ def graphs(whichgraph, params):
         G = nx.stochastic_block_model(params['sizes'],np.array(params['probs'])/params['sizes'][0], seed=params['seed'])
         for i,j in G.edges:
             G[i][j]['weight'] = 1.
-        
+
+        for u in G:
+            G.nodes[u]['color'] = G.nodes[u]['block']
+
         G = nx.convert_node_labels_to_integers(G, label_attribute='labels_orig')        
 
     elif whichgraph == 'SM':
@@ -454,10 +462,27 @@ def graphs(whichgraph, params):
         
     elif whichgraph == 'swiss-roll':
         tpe = 'pointcloud'
-        pos, color = skd.make_swiss_roll(n_samples=params['n'], noise=params['noise'], random_state=None)    
+        pos, color = skd.make_swiss_roll(n_samples=params['n'], noise=params['noise'], random_state=params['seed'])    
         for i, _pos in enumerate(pos):
             G.add_node(i, pos = _pos, color = color[i])
             
+    elif whichgraph == 'star':
+        tpe = 'graph'
+        G = nx.star_graph(params['n'])
+        
+    elif whichgraph == 'dumbbell_of_stars':
+        tpe = 'graph'
+        G = nx.Graph()
+        G.add_star(np.arange(params['m']))
+        G.add_star(np.arange(params['m']-1, params['m'] + params['n']))
+    
+    elif whichgraph == 'star_of_circles':
+        tpe = 'graph'
+        G = nx.Graph()
+        G.add_star(np.arange(params['m']))
+        for i in range(1,params['m']):
+            G.add_cycle([i] + list(range(params['m'] + (i-1)*params['n'], params['m'] + i*params['n'] )))
+        
     elif whichgraph == 'torus':
         tpe = 'graph'
         G = nx.grid_2d_graph(params['n'], params['m'], periodic=True)
@@ -468,8 +493,36 @@ def graphs(whichgraph, params):
 
     elif whichgraph == 'tree':
         tpe = 'graph'
-        G = nx.balanced_tree(params['r'], params['h'])      
+        G = nx.balanced_tree(params['r'], params['h'])         
         
+    elif whichgraph == 'triangle_of_triangles':        
+        m = 1
+        N = 3
+        A = np.ones([N, N])-np.eye(N)
+        A = np.kron(np.eye(N**m),A)
+        A[2,3]=1; A[3,2]=1; A[1,6]=1; A[6,1]=1; A[4,8]=1; A[8,4]=1
+        A = np.vstack((np.hstack((A, np.zeros([9, 9]))), np.hstack((np.zeros([9, 9]), A))))
+        A[0,9] = 1; A[9,0] = 1
+    
+        G = nx.Graph(A)
+ 
+    elif whichgraph == 'ring_of_cliques':
+        num_cliques = 5
+        clique_size = 6
+        G = nx.ring_of_cliques(num_cliques, clique_size)
+        
+        x1 = np.linspace(-np.pi,np.pi,num_cliques)
+        x2 = np.linspace(0,2*np.pi,clique_size)[::-1]
+               
+        posx = np.zeros(num_cliques*clique_size)
+        posy = np.zeros(num_cliques*clique_size)
+        for i in range(num_cliques):         
+            for j in range(clique_size):
+                posx[i*clique_size + j] = np.cos(x1[i]) + 0.5*np.cos(x2[j] + x1[i] + 2*np.pi*3/5)
+                posy[i*clique_size + j] = np.sin(x1[i]) + 0.5*np.sin(x2[j] + x1[i] + 2*np.pi*3/5)
+                
+        pos = [ [posx[i],posy[i]] for i in range(num_cliques*clique_size)]
+       
     elif whichgraph == 'tutte':
         tpe = 'graph'
         G = nx.tutte_graph()  
@@ -487,7 +540,6 @@ def plot_graph_3D(G, node_colors='custom', edge_colors=[], params=None):
     n = G.number_of_nodes()
     m = G.number_of_edges()
  
-#    xyz = list(nx.get_node_attributes(G,'pos').values())   
     pos = nx.get_node_attributes(G, 'pos')       
     xyz = []
     for i in range(len(pos)):

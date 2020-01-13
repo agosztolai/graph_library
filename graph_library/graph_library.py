@@ -41,9 +41,8 @@ class GraphGen(object):
         print('\nParameters:', self.params)
         
         #create a folder
-        #if not os.path.isdir(self.outfolder):
-        #    os.mkdir(self.outfolder)
-        self.outfolder = '.'
+        if not os.path.isdir(self.outfolder):
+            os.mkdir(self.outfolder)
                 
         self.params['counter'] = 0    
         while self.params['counter'] < self.nsamples:
@@ -89,22 +88,23 @@ class GraphGen(object):
                     nx.write_gpickle(self.G, self.outfolder + '/' + fname + "_.gpickle")
                     
                     #plot 2D graph or 3D graph
-                    if self.plot and len(self.G.nodes[1]['pos'])==3:
-                        fig = plot_graph_3D(self.G, node_colors='custom', params=self.params)  
-                        fig.savefig(self.outfolder  + '/' + fname + '.svg')
-                    elif self.plot and len(self.G.nodes[1]['pos'])==2:
-                        fig = plot_graph(self.G, node_colors='cluster')  
-                        fig.savefig(self.outfolder + '/' + fname + '.svg')
+                    #if self.plot and len(self.G.nodes[1]['pos'])==3:
+                    #    fig = plot_graph_3D(self.G, node_colors='custom', params=self.params)  
+                    #    fig.savefig(self.outfolder  + '/' + fname + '.svg')
+                    #elif self.plot and len(self.G.nodes[1]['pos'])==2:
+                    #    fig = plot_graph(self.G, node_colors='cluster')  
+                    #    fig.savefig(self.outfolder + '/' + fname + '.svg')
                         
                     self.params['counter'] += 1    
                 else:
                     print('Graph is disconnected')
                     
             except Exception as e:
-                print('Graph generation failed becuase ' + str(e) + ' . Trying again.')
+                print('Graph generation failed because ' + str(e) )
                 self.params['counter'] = self.nsamples + 1
                 
             self.G.graph['name'] = self.whichgraph 
+            
     # =============================================================================
     # similarity matrix
     # =============================================================================
@@ -180,16 +180,16 @@ def graphs(whichgraph, params):
 
     elif whichgraph == 'celegans':
         tpe = 'graph'
-        from skd.celegans.create_graph import create_celegans 
-        G, pos, labels, neuron_type, colors = create_celegans(location = '../../datasets/celegans/')
+        from datasets.celegans.create_graph import create_celegans 
+        G, pos, labels, neuron_type, colors = create_celegans(location = 'datasets/celegans/')
         
         for i in G:
             G.nodes[i]['old_label'] = G.nodes[i]['labels']
             
     elif whichgraph == 'celegans_undirected':
         tpe = 'graph'
-        from skd.celegans.create_graph import create_celegans 
-        G, pos, labels, neuron_type, colors = create_celegans(location = '../datasets/celegans/')
+        from datasets.celegans.create_graph import create_celegans 
+        G, pos, labels, neuron_type, colors = create_celegans(location = 'datasets/celegans/')
         
         for i in G:
             G.nodes[i]['old_label'] = G.nodes[i]['labels']
@@ -290,7 +290,7 @@ def graphs(whichgraph, params):
         
     elif whichgraph == 'dolphin':
         tpe = 'graph'
-        G = nx.read_gml('../../datasets/dolphins.gml')
+        G = nx.read_gml('datasets/dolphins.gml')
         G = nx.convert_node_labels_to_integers(G)     
         for i,j in G.edges:
             G[i][j]['weight']= 1.
@@ -331,7 +331,8 @@ def graphs(whichgraph, params):
     
     elif whichgraph == 'football':
         tpe = 'graph'
-        G = nx.read_gml('../datasets/football.gml')
+        G = nx.read_gml('datasets/football.gml')
+        G = nx.convert_node_labels_to_integers(G, label_attribute='old_label')
         
     elif whichgraph == 'frucht':
         tpe = 'graph'
@@ -397,14 +398,15 @@ def graphs(whichgraph, params):
     
     elif whichgraph == 'miserable':
         tpe = 'graph'
-        G = nx.read_gml('../datasets/lesmis.gml')
+        G = nx.read_gml('datasets/lesmis.gml')
+        G = nx.convert_node_labels_to_integers(G, label_attribute='old_label')
         
         for i,j in G.edges:
             G[i][j]['weight']= 1.
             
     elif whichgraph == 'netscience':
         tpe = 'graph'
-        G_full = nx.read_gml('../../datasets/netscience.gml')
+        G_full = nx.read_gml('datasets/netscience.gml')
         G_full = nx.convert_node_labels_to_integers(G_full, label_attribute='old_label')
         largest_cc = sorted(max(nx.connected_components(G_full), key=len))
         G = G_full.subgraph(largest_cc)
@@ -443,7 +445,38 @@ def graphs(whichgraph, params):
 
     elif whichgraph == 'scale-free':
         tpe = 'graph'
-        G = nx.DiGraph(nx.scale_free_graph(params['n']))                      
+        G = nx.scale_free_graph(params['n'])
+        G = G.to_undirected()
+
+    elif whichgraph == 'triangle_of_triangles':  
+        tpe = 'graph'
+        m = 1
+        N = 3
+        A = np.ones([N, N])-np.eye(N)
+        A = np.kron(np.eye(N**m),A)
+        A[2,3]=1; A[3,2]=1; A[1,6]=1; A[6,1]=1; A[4,8]=1; A[8,4]=1
+        A = np.vstack((np.hstack((A, np.zeros([9, 9]))), np.hstack((np.zeros([9, 9]), A))))
+        A[0,9] = 1; A[9,0] = 1
+    
+        G = nx.Graph(A)
+ 
+    elif whichgraph == 'ring_of_cliques':
+        tpe = 'graph'
+        num_cliques = 5
+        clique_size = 6
+        G = nx.ring_of_cliques(num_cliques, clique_size)
+        
+        x1 = np.linspace(-np.pi,np.pi,num_cliques)
+        x2 = np.linspace(0,2*np.pi,clique_size)[::-1]
+               
+        posx = np.zeros(num_cliques*clique_size)
+        posy = np.zeros(num_cliques*clique_size)
+        for i in range(num_cliques):         
+            for j in range(clique_size):
+                posx[i*clique_size + j] = np.cos(x1[i]) + 0.5*np.cos(x2[j] + x1[i] + 2*np.pi*3/5)
+                posy[i*clique_size + j] = np.sin(x1[i]) + 0.5*np.sin(x2[j] + x1[i] + 2*np.pi*3/5)
+                
+        pos = [ [posx[i],posy[i]] for i in range(num_cliques*clique_size)]                     
         
     elif whichgraph == 'SBM' or whichgraph == 'SBM_2':
         tpe = 'graph'
@@ -465,7 +498,25 @@ def graphs(whichgraph, params):
         pos, color = skd.make_swiss_roll(n_samples=params['n'], noise=params['noise'], random_state=params['seed'])    
         for i, _pos in enumerate(pos):
             G.add_node(i, pos = _pos, color = color[i])
-            
+ 
+    elif whichgraph == 'star':
+        tpe = 'graph'
+        G = nx.star_graph(params['n'])
+        
+    elif whichgraph == 'dumbbell_of_stars':
+        tpe = 'graph'
+        G = nx.Graph()
+        G.add_star(np.arange(params['m']))
+        G.add_star(np.arange(params['m']-1, params['m'] + params['n']))
+    
+    elif whichgraph == 'star_of_circles':
+        tpe = 'graph'
+        G = nx.Graph()
+        G.add_star(np.arange(params['m']))
+        for i in range(1,params['m']):
+            G.add_cycle([i] + list(range(params['m'] + (i-1)*params['n'], params['m'] + i*params['n'] )))
+ 
+           
     elif whichgraph == 'torus':
         tpe = 'graph'
         G = nx.grid_2d_graph(params['n'], params['m'], periodic=True)
@@ -481,7 +532,8 @@ def graphs(whichgraph, params):
     elif whichgraph == 'tutte':
         tpe = 'graph'
         G = nx.tutte_graph()  
-
+    else:
+        raise Exception('Unknwon graph type, it will not work!')
     G.graph['name'] = whichgraph
     
     return G, tpe
@@ -495,13 +547,8 @@ def plot_graph_3D(G, node_colors='custom', edge_colors=[], params=None):
     n = G.number_of_nodes()
     m = G.number_of_edges()
  
-#    xyz = list(nx.get_node_attributes(G,'pos').values())   
     pos = nx.get_node_attributes(G, 'pos')       
-    xyz = []
-    for i in range(len(pos)):
-        xyz.append(pos[i])
-        
-    xyz = np.array(xyz)
+    xyz = np.array([pos[i] for i in range(len(pos))])
         
     #node colors
     if node_colors=='degree':

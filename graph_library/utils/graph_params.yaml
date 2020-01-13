@@ -222,3 +222,24 @@ swiss-roll:
         t_min: 1.0
         t_max: 2.0
         n_t: 20     
+
+star:
+        n = 10
+        t_min = -2.0
+        t_max = 0.
+        n_t = 10
+        
+dumbbell_of_stars:
+        m = 10
+        n = 15
+        t_min = -2.0
+        t_max = 0.
+        n_t = 10 
+        
+star_of_circles:
+        m = 10
+        n = 5
+        t_min = -2.0
+        t_max = 0.
+        n_t = 10
+                     
