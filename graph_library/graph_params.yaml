@@ -58,7 +58,7 @@ email:
 karate:
         t_min: -3.0
         t_max: 2.0
-        n_t: 100
+        n_t: 10
 
 miserable:
         t_min: -2.0
@@ -193,7 +193,10 @@ frucht:
         n_t: 200
 
 scale-free:
-        n: 30
+        n: 100
+        t_min: -2.0
+        t_max: 0.
+        n_t: 10
         
 gnr:
         n: 20
@@ -224,22 +227,40 @@ swiss-roll:
         n_t: 20     
 
 star:
-        n = 10
-        t_min = -2.0
-        t_max = 0.
-        n_t = 10
+        n: 10
+        t_min: -2.0
+        t_max: 0.
+        n_t: 10
         
 dumbbell_of_stars:
-        m = 10
-        n = 15
-        t_min = -2.0
-        t_max = 0.
-        n_t = 10 
+        m: 10
+        n: 15
+        t_min: -2.0
+        t_max: 1.
+        n_t: 20 
         
 star_of_circles:
-        m = 10
-        n = 5
-        t_min = -2.0
-        t_max = 0.
-        n_t = 10
+        m: 10
+        n: 5
+        t_min: -2.0
+        t_max: 1.
+        n_t: 20
+        
+triangle_of_triangles:
+        t_min: -4.0
+        t_max: 0.
+        n_t: 20        
+        
+ring_of_cliques:
+        t_min: -2.0
+        t_max: 1.
+        n_t: 20   
+
+clique_of_cliques:
+        m: 5
+        n: 4
+        L: 500  
+        t_min: -2.0
+        t_max: 1.
+        n_t: 20
                      

@@ -51,49 +51,51 @@ class GraphGen(object):
             
             try:
                 #generate graph
-                self.G, self.tpe = graphs(self.whichgraph, self.params)
+                G, pos, self.tpe = graphs(self.whichgraph, self.params)
+                G.graph['name'] = self.whichgraph
 
                 #compute similarity matrix if not assigned    
                 if self.tpe == 'pointcloud':
                     if self.params['similarity'] != None:
-                        A = self.similarity_matrix(symmetric)
+                        A = self.similarity_matrix(G, self.params, symmetric)
                         self.A = A
                         G1 = nx.from_numpy_matrix(A)
-                        for i in self.G:
-                            G1.nodes[i]['pos'] = self.G.nodes[i]['pos']
-                            G1.nodes[i]['color'] = self.G.nodes[i]['color']                    
-                        self.G = G1  
+                        for i in G:
+                            G1.nodes[i]['pos'] = G.nodes[i]['pos']
+                            G1.nodes[i]['color'] = G.nodes[i]['color']                    
+                        G = G1  
                     else:
                         print('Define similarity measure!')
                         break
                     
                 #compute positions if not assigned    
                 elif self.tpe =='graph':
-                    if 'pos' not in self.G.nodes[1]:
-                        pos = nx.spring_layout(self.G, dim=dim, weight='weight')
-                        for i in self.G:
-                            self.G.nodes[i]['pos'] = pos[i]
+                    if ('pos' not in G.nodes[1]):
+                        if pos == []:
+                            pos = nx.spring_layout(G, dim=dim, weight='weight')
+                        for i in G:
+                            G.nodes[i]['pos'] = pos[i]
                             
                 #this is for compatibility with PyGenStability
-                if 'block' in self.G.nodes[1]:
-                    for i in self.G:
-                        self.G.nodes[i]['old_label'] = str(self.G.nodes[i]['block'])
-                    self.G = nx.convert_node_labels_to_integers(self.G, label_attribute='old_label') 
+                if 'block' in G.nodes[1]:
+                    for i in G:
+                        G.nodes[i]['old_label'] = str(G.nodes[i]['block'])
+                    G = nx.convert_node_labels_to_integers(G, label_attribute='old_label') 
                     
                 #check if graph is connected    
-                if nx.is_connected(self.G):
+                if nx.is_connected(G):
                     
                     #save
                     fname = self.whichgraph + '_' + str(self.params['counter'])
-                    nx.write_gpickle(self.G, self.outfolder + '/' + fname + "_.gpickle")
+                    nx.write_gpickle(G, self.outfolder + '/' + fname + "_.gpickle")
                     
                     #plot 2D graph or 3D graph
-                    #if self.plot and len(self.G.nodes[1]['pos'])==3:
-                    #    fig = plot_graph_3D(self.G, node_colors='custom', params=self.params)  
-                    #    fig.savefig(self.outfolder  + '/' + fname + '.svg')
-                    #elif self.plot and len(self.G.nodes[1]['pos'])==2:
-                    #    fig = plot_graph(self.G, node_colors='cluster')  
-                    #    fig.savefig(self.outfolder + '/' + fname + '.svg')
+                    if self.plot and len(G.nodes[1]['pos'])==3:
+                        fig = plot_graph_3D(G, node_colors='custom', params=self.params)  
+                        fig.savefig(self.outfolder  + '/' + fname + '.svg')
+                    elif self.plot and len(G.nodes[1]['pos'])==2:
+                        fig = plot_graph(G, node_colors='cluster')  
+                        fig.savefig(self.outfolder + '/' + fname + '.svg')
                         
                     self.params['counter'] += 1    
                 else:
@@ -102,23 +104,21 @@ class GraphGen(object):
             except Exception as e:
                 print('Graph generation failed because ' + str(e) )
                 self.params['counter'] = self.nsamples + 1
-                
-            self.G.graph['name'] = self.whichgraph 
             
+        return G
+    
     # =============================================================================
     # similarity matrix
     # =============================================================================
-    def similarity_matrix(self, symmetric=True):
+    def similarity_matrix(G, params,  symmetric=True):
         
-        n = self.G.number_of_nodes()
+        n = G.number_of_nodes()
 
-        pos = nx.get_node_attributes(self.G,'pos')
+        pos = nx.get_node_attributes(G,'pos')
         pos = np.reshape([pos[i] for i in range(n)],(n,len(pos[0])))
 
-        color = nx.get_node_attributes(self.G,'color')
+        color = nx.get_node_attributes(G,'color')
         color = [color[i] for i in range(n)]
-
-        params = self.params 
 
         sim = params['similarity']
         if sim=='euclidean' or sim=='minkowski':
@@ -195,6 +195,36 @@ def graphs(whichgraph, params):
             G.nodes[i]['old_label'] = G.nodes[i]['labels']
             
         G = G.to_undirected()        
+        
+    elif whichgraph == 'clique_of_cliques':
+        tpe = 'graph'
+        m = params['m']
+        levels = params['n']
+        N = m**levels
+        L = params['L']
+        
+        A = np.zeros([N,N])
+        for l in range(levels):   
+            for i in range(0,N,N//(m**l)):
+                for j in range(N//(m**l)):
+                    for k in range(j+1,N//(m**l)):
+                        A[i+j,i+k] = 0
+   
+            for i in range(0,N,N//(m**l)):
+                for j in range(N//(m**l)):
+                    for k in range(j+1,N//(m**l)):
+                        A[i+j,i+k] = \
+                        (l-levels+m+1)**13/m**13*np.random.binomial(1,(l-levels+m+1)**9/m**9)
+                        
+        pos = np.zeros([N,2])
+        
+        for i in range(levels):
+            for k in range(m**(i+1)):
+                pos[k*N//(m**(i+1)) : (k+1)*N//(m**(i+1)), :] += \
+                [L/(3**i)*np.cos((k % m)*2*np.pi/m), L/(3**i)*np.sin((k % m)*2*np.pi/m)]
+        
+        A = A + A.T
+        G = nx.from_numpy_matrix(A)
         
     elif whichgraph == 'grid':
         tpe = 'graph'
@@ -536,7 +566,7 @@ def graphs(whichgraph, params):
         raise Exception('Unknwon graph type, it will not work!')
     G.graph['name'] = whichgraph
     
-    return G, tpe
+    return G, pos, tpe
 
 # =============================================================================
 # plot graph
@@ -563,7 +593,7 @@ def plot_graph_3D(G, node_colors='custom', edge_colors=[], params=None):
     #edge colors
     if edge_colors!=[]:
         edge_color = plt.cm.cool(edge_colors) 
-        width = np.exp(-(edge_colors - np.min(np.min(edge_colors),0))) + 1
+        width = np.exp(-(edge_colors - np.min(np.min(edge_colors),0))) + 0.5
         norm = mpl.colors.Normalize(vmin=np.min(edge_colors), vmax=np.max(edge_colors))
         cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.cool)
         cmap.set_array([])    
@@ -584,7 +614,7 @@ def plot_graph_3D(G, node_colors='custom', edge_colors=[], params=None):
             y = np.array((xyz[j[0]][1], xyz[j[1]][1]))
             z = np.array((xyz[j[0]][2], xyz[j[1]][2]))
                    
-            ax.plot(x, y, z, c=edge_color[i], alpha=0.5, linewidth = width[i])
+            ax.plot(x, y, z, c=edge_color[i], alpha=0.3, linewidth = width[i])
     
     if edge_colors!=[]:    
         fig.colorbar(cmap)   
