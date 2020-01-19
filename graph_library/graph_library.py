@@ -9,7 +9,8 @@ from scipy.spatial.distance import pdist, squareform
 from sklearn.metrics.pairwise import rbf_kernel
 import os
 import sklearn.neighbors as skn
-import yaml as yaml
+#import yaml as yaml
+import sys
 
 '''
 # =============================================================================
@@ -17,164 +18,364 @@ import yaml as yaml
 # =============================================================================
 '''
 
-class GraphGen(object): 
+def generate(whichgraph, params=None, nsamples = 1, dim=2, symmetric=True, plot=True):
+              
+    outfolder = './' + whichgraph
+    print('\nParameters:', params)
+              
+    #create a folder
+    if not os.path.isdir(outfolder):
+        os.mkdir(outfolder)
+             
+    seed = 0    
+    counter = 0    
+    while counter < nsamples:
+#        if 'seed' in params.keys():
+#            params['seed'] += 1
+            
+        try:
+            #generate graph
+            G, pos, par = generate_graph(whichgraph, params)
 
-    def __init__(self, whichgraph='barbell', nsamples=1, paramsfile='graph_params.yaml',
-                 outfolder=[], plot=True):
-
-        self.paramsfile = paramsfile
-        self.whichgraph = whichgraph
-        self.color = []
-        self.pos = None
-        self.plot = plot
-
-        self.params = yaml.load(open(paramsfile,'rb'), Loader=yaml.FullLoader)[whichgraph]
-        self.nsamples = nsamples
-        if outfolder==[]:            
-            self.outfolder = './' + whichgraph
-        if 'similarity' not in self.params:
-            self.params['similarity'] = None
-
-    def generate(self, dim=2, symmetric=True):
-        
-        print('\nGraph: ' + self.whichgraph)
-        print('\nParameters:', self.params)
-        
-        #create a folder
-        if not os.path.isdir(self.outfolder):
-            os.mkdir(self.outfolder)
+            #compute similarity matrix if not assigned    
+            if par['typ'] == 'pointcloud':
                 
-        self.params['counter'] = 0    
-        while self.params['counter'] < self.nsamples:
-            if 'seed' in self.params.keys():
-                self.params['seed'] += 1
-            
-            try:
-                #generate graph
-                G, pos, self.tpe = graphs(self.whichgraph, self.params)
-                G.graph['name'] = self.whichgraph
-
-                #compute similarity matrix if not assigned    
-                if self.tpe == 'pointcloud':
-                    if self.params['similarity'] != None:
-                        A = self.similarity_matrix(G, self.params, symmetric)
-                        self.A = A
-                        G1 = nx.from_numpy_matrix(A)
-                        for i in G:
-                            G1.nodes[i]['pos'] = G.nodes[i]['pos']
-                            G1.nodes[i]['color'] = G.nodes[i]['color']                    
-                        G = G1  
-                    else:
-                        print('Define similarity measure!')
-                        break
+                G1 = similarity_matrix(G, sim=par['similarity'], par=par['similarity_par'], symmetric=True)
+                G = assign_graph_metadata(G1, pos)
                     
-                #compute positions if not assigned    
-                elif self.tpe =='graph':
-                    if ('pos' not in G.nodes[1]):
-                        if pos == []:
-                            pos = nx.spring_layout(G, dim=dim, weight='weight')
-                        for i in G:
-                            G.nodes[i]['pos'] = pos[i]
-                            
-                #this is for compatibility with PyGenStability
-                if 'block' in G.nodes[1]:
-                    for i in G:
-                        G.nodes[i]['old_label'] = str(G.nodes[i]['block'])
-                    G = nx.convert_node_labels_to_integers(G, label_attribute='old_label') 
-                    
-                #check if graph is connected    
-                if nx.is_connected(G):
-                    
-                    #save
-                    fname = self.whichgraph + '_' + str(self.params['counter'])
-                    nx.write_gpickle(G, self.outfolder + '/' + fname + "_.gpickle")
-                    
-                    #plot 2D graph or 3D graph
-                    if self.plot and len(G.nodes[1]['pos'])==3:
-                        fig = plot_graph_3D(G, node_colors='custom', params=self.params)  
-                        fig.savefig(self.outfolder  + '/' + fname + '.svg')
-                    elif self.plot and len(G.nodes[1]['pos'])==2:
-                        fig = plot_graph(G, node_colors='cluster')  
-                        fig.savefig(self.outfolder + '/' + fname + '.svg')
+            #compute positions if not assigned    
+            elif par['typ'] =='graph':
+                if pos == None and ('pos' not in G.nodes[1]):
+                    pos = nx.spring_layout(G, dim=dim, weight='weight')
                         
-                    self.params['counter'] += 1    
-                else:
-                    print('Graph is disconnected')
+                    G = assign_graph_metadata(G, pos)
+                            
+            #this is for compatibility with PyGenStability
+            if 'block' in G.nodes[1]:
+                for i in G:
+                    G.nodes[i]['old_label'] = str(G.nodes[i]['block'])
+                G = nx.convert_node_labels_to_integers(G, label_attribute='old_label') 
                     
-            except Exception as e:
-                print('Graph generation failed because ' + str(e) )
-                self.params['counter'] = self.nsamples + 1
-            
-        return G
+            #check if graph is connected    
+            if not nx.is_connected(G):
+                print('Graph is disconnected')
+                continue
+                
+            return G
+                
+            #save
+            fname = whichgraph + '_' + str(counter)
+            nx.write_gpickle(G, outfolder + '/' + fname + "_.gpickle")
+                    
+            #plot 2D graph or 3D graph
+            if plot and len(G.nodes[1]['pos'])==3:
+                fig = plot_graph_3D(G, node_colors='custom', params=params)  
+                fig.savefig(outfolder  + '/' + fname + '.svg')
+            elif plot and len(G.nodes[1]['pos'])==2:
+                fig = plot_graph(G, node_colors='cluster')  
+                fig.savefig(outfolder + '/' + fname + '.svg')
+                        
+            counter += 1                      
+                    
+        except Exception as e:
+            print('Graph generation failed because ' + str(e) )
+            counter = nsamples + 1
+   
+# =============================================================================
+# similarity matrix
+# =============================================================================
+def similarity_matrix(G, sim=None, par=None, symmetric=True):
+        
+    if sim == None:
+        raise ValueError('Specify similarity measure!')
+    if par == None:
+        raise ValueError('Specify parameter(s) of similarity measure!')
     
-    # =============================================================================
-    # similarity matrix
-    # =============================================================================
-    def similarity_matrix(G, params,  symmetric=True):
+    n = G.number_of_nodes()
+    pos = nx.get_node_attributes(G,'pos')
+    pos = np.reshape([pos[i] for i in range(n)],(n,len(pos[0])))
+
+    color = nx.get_node_attributes(G,'color')
+    color = [color[i] for i in range(n)]
+
+    if sim=='euclidean' or sim=='minkowski':
+        A = squareform(pdist(pos, sim))
         
-        n = G.number_of_nodes()
-
-        pos = nx.get_node_attributes(G,'pos')
-        pos = np.reshape([pos[i] for i in range(n)],(n,len(pos[0])))
-
-        color = nx.get_node_attributes(G,'color')
-        color = [color[i] for i in range(n)]
-
-        sim = params['similarity']
-        if sim=='euclidean' or sim=='minkowski':
-            A = squareform(pdist(pos, sim))
+    elif sim=='knn':
+        A = skn.kneighbors_graph(pos, par, mode='connectivity', metric='minkowski', p=2, metric_params=None, n_jobs=-1)
+        A = A.todense()
         
-        elif sim=='knn':
-            A = skn.kneighbors_graph(pos, params['k'], mode='connectivity', metric='minkowski', p=2, metric_params=None, n_jobs=-1)
-            A = A.todense()
+    elif sim=='radius':
+        A = skn.radius_neighbors_graph(pos, par, mode='connectivity', metric='minkowski', p=2, metric_params=None, n_jobs=-1)
+        A = A.todense()
         
-        elif sim=='radius':
-            A = skn.radius_neighbors_graph(pos, params['radius'], mode='connectivity', metric='minkowski', p=2, metric_params=None, n_jobs=-1)
-            A = A.todense()
+    elif sim=='rbf':    
+        gamma_ = par
+        A = rbf_kernel(pos, gamma=gamma_)
+
+    if symmetric==True:
+        A = check_symmetric(A)
         
-        elif sim=='rbf':    
-            gamma_ = (params['gamma']
-                               if 'gamma' in params.keys() else 1.0 / pos.shape[1])
-            A = rbf_kernel(pos, gamma=gamma_)
+    for i in range(n):
+        for j in range(n):
+            G.add_edge(i,j, weight = A[i,j])
 
-        if symmetric==True:
-            A = check_symmetric(A)
-
-        return A
+    return G
      
+
+def assign_graph_metadata(G, pos=None, color=None): 
+    
+    if pos is not None and 'pos' not in G.nodes[1]:
+        for i in G:
+            G.nodes[i]['pos'] = pos[i]
+            
+    if color is not None and 'color' not in G.nodes[1]:
+        for i in G:
+            G.nodes[i]['color'] = color[i]
+            
+    return G        
+
+
+def generate_graph_family(whichgraph, params=None, nsamples = 2):
+    
+    counter = 0    
+    seed = 0
+    while counter < nsamples:
+        seed += 1
+            
+        G, pos, par = generate_graph(whichgraph='barbell', params=params)
+    
+
+    
+def generate_graph(whichgraph='barbell', params=None):
+    
+    print('\nGraph: ' + whichgraph)
+    
+    if params == None:
+        return getattr(sys.modules[__name__], "generate_%s" % whichgraph)()
+    else:
+        return getattr(sys.modules[__name__], "generate_%s" % whichgraph)(params)
+    
+
 # =============================================================================
 # graphs
 # =============================================================================
-def graphs(whichgraph, params):
+def generate_barbell(params = {'m1': 7, 'm2': 0}):
+    
+    G = nx.barbell_graph(params['m1'], params['m2'])
+    G.graph['name'] = 'barbell'
+    params['typ'] = 'graph'
+    
+    for i in G:
+        G.nodes[i]['block'] = np.mod(i,params['m1'])
+        
+    return G, None, params
+
+
+def generate_karate(params = None):
+    
+    G = nx.karate_club_graph()
+    G.graph['name'] = 'karate'
+    params['typ'] = 'graph'
+        
+    for i,j in G.edges:
+        G[i][j]['weight']= 1.
+    
+    for i in G:
+        if G.nodes[i]['club'] == 'Mr. Hi':
+            G.nodes[i]['block'] = 0
+            G.nodes[i]['color'] = 0
+        else:
+            G.nodes[i]['block'] = 1
+            G.nodes[i]['color'] = 1
+    
+    return G, None, params
+
+
+def generate_barbell_noisy(params = {'m1': 7, 'm2': 0, 'noise': 0.5, 'seed': 0}):        
+
+    np.random.seed(params['seed'])
+    G = nx.barbell_graph(params['m1'], params['m2'])
+    G.graph['name'] = 'barbell_noisy'
+    params['typ'] = 'graph'
+    
+    for i in G:
+        G.nodes[i]['block'] = np.mod(i,params['m1'])
+    for i,j in G.edges():
+        G[i][j]['weight'] = abs(np.random.normal(1,params['noise']))
+         
+    return G, None, params
+
+
+def generate_barbell_asy(params = {'m1': 7, 'm2': 0}):
+    
+    A = np.block([[np.ones([params['m1'], params['m1']]), np.zeros([params['m1'],params['m2']])],\
+                   [np.zeros([params['m2'],params['m1']]), np.ones([params['m2'],params['m2']])]])
+    A = A - np.eye(params['m1'] + params['m2'])
+    A[params['m1']-1,params['m1']] = 1
+    A[params['m1'],params['m1']-1] = 1
+    G = nx.from_numpy_matrix(A)   
+    G.graph['name'] = 'barbell_asy'
+    params['typ'] = 'graph'
+    
+    for i in G:
+        G.nodes[i]['block'] = np.mod(i,params['m1'])   
+        
+    return G, None, params
+
+
+def generate_clique_of_cliques(params = {'m':5, 'n': 3, 'L': 500}):
+    
+    m = params['m']
+    levels = params['n']
+    N = m**levels
+    L = params['L']
+    np.random.seed(params['seed'])
+        
+    A = np.zeros([N,N])
+    for l in range(levels):   
+        for i in range(0,N,N//(m**l)):
+            for j in range(N//(m**l)):
+                for k in range(j+1,N//(m**l)):
+                    A[i+j,i+k] = 0
+   
+        for i in range(0,N,N//(m**l)):
+            for j in range(N//(m**l)):
+                for k in range(j+1,N//(m**l)):
+                    A[i+j,i+k] = \
+                    (l-levels+m+1)**13/m**13*np.random.binomial(1,(l-levels+m+1)**9/m**9)
+                        
+    pos = np.zeros([N,2])
+        
+    for i in range(levels):
+        for k in range(m**(i+1)):
+            pos[k*N//(m**(i+1)) : (k+1)*N//(m**(i+1)), :] += \
+            [L/(3**i)*np.cos((k % m)*2*np.pi/m), L/(3**i)*np.sin((k % m)*2*np.pi/m)]
+        
+    A = A + A.T
+    G = nx.from_numpy_matrix(A)    
+    G.graph['name'] = 'clique_of_cliques'
+    params['typ'] = 'graph'
+
+    return G, pos, params
+
+
+def generate_Fan(params = {'w_in': 1.5, 'l': 4, 'g': 32, 'p_in': 0.125, 'p_out': 0.125, 'seed': 0}):
+    
+    G = nx.planted_partition_graph(params['l'], params['g'], params['p_in'], params['p_out'], params['seed'])   
+    G.graph['name'] = 'Fan'
+    params['typ'] = 'graph'
+    
+    for i,j in G.edges:
+        if G.nodes[i]['block'] == G.nodes[j]['block']:
+            G[i][j]['weight'] = params['w_in']
+        else:
+            G[i][j]['weight'] = 2 - params['w_in']
+            
+    labels_gt = []
+    for i in range(params['l']):
+        labels_gt = np.append(labels_gt,i*np.ones(params['g']))
+            
+    for n in G.nodes:
+        G.nodes[n]['block'] = labels_gt[n-1]   
+            
+    G = nx.convert_node_labels_to_integers(G, label_attribute='old_label')
+
+    return G, None, params
+
+
+def generate_GN(params = {'l': 4, 'g': 32, 'p_in': 0.4, 'p_out': 0.2, 'seed': 0}):
+    
+    G = nx.planted_partition_graph(params['l'], params['g'], params['p_in'], params['p_out'], seed=params['seed'])
+    G.graph['name'] = 'GN'
+    params['typ'] = 'graph'
+        
+    labels_gt = []
+    for i in range(params['l']):
+        labels_gt = np.append(labels_gt,i*np.ones(params['g']))
+            
+    for n in G.nodes:
+        G.nodes[n]['block'] = labels_gt[n-1]
+
+    return G, None, params
+
+
+def generate_LFR(params = {'n':1000, 'tau1': 2, 'tau2': 2, 'mu': 0.5, 'k': 20, 
+                           'minc': 10, 'maxc': 50, 'scriptfolder': './datasets/LFR-Benchmark/lfrbench_udwov', 
+                           'outfolder': '/data/AG/geocluster/LFR/', 'seed': 0}):     
+    command = params['scriptfolder'] + \
+        " -N " + str(params['n']) + \
+        " -t1 " + str(params['tau1']) + \
+        " -t2 " + str(params['tau2']) + \
+        " -mut " + str(params['mu']) + \
+        " -muw " + str(params['mu']) + \
+        " -maxk " + str(params['n']) + \
+        " -k " + str(params['k']) + \
+        " -name " + params['outfolder'] + "data"
+        
+    os.system(command)
+    
+    G = nx.read_weighted_edgelist(params['outfolder'] +'data.nse', nodetype=int, encoding='utf-8')
+    G.graph['name'] = 'LFR'
+    params['typ'] = 'graph'
+    
+    for e in G.edges:
+        G.edges[e]['weight'] = 1
+        
+    labels = np.loadtxt(params['outfolder'] +'data.nmc',usecols=1,dtype=int)    
+    for n in G.nodes:
+        G.nodes[n]['block'] = labels[n-1]
+        
+    return G, None, params   
+
+
+def generate_scale_free(params = {'n': 100}):
+
+    G = nx.scale_free_graph(params['n'])
+    G = G.to_undirected()
+    G.graph['name'] = 'scale_free'
+    params['typ'] = 'graph'
+    
+    return G, None, params
+
+
+def generate_swiss_roll(params = {'n': 300, 'noise': 0., 'elev': 10, 'azim': 270,
+                                  'similarity': 'knn', 'similarity_par': 10,
+                                  'seed': 0}):
     
     G = nx.Graph()
+    G.graph['name'] = 'swiss_roll'
+    params['typ'] = 'pointcloud'
     
-    if whichgraph == 'barbell':
-        tpe = 'graph'
-        G = nx.barbell_graph(params['m1'], params['m2'])
-        for i in G:
-            G.nodes[i]['block'] = np.mod(i,params['m1'])
-            
-    elif whichgraph == 'barbell_noisy':
-        tpe = 'graph'
-        G = nx.barbell_graph(params['m1'], params['m2'])
-        for i in G:
-            G.nodes[i]['block'] = np.mod(i,params['m1'])
-        for i,j in G.edges():
-            G[i][j]['weight'] = abs(np.random.normal(1,params['noise']))
-                
-    elif whichgraph == 'barbell_asy':
-        tpe = 'graph'
-        A = np.block([[np.ones([params['m1'], params['m1']]), np.zeros([params['m1'],params['m2']])],\
-                       [np.zeros([params['m2'],params['m1']]), np.ones([params['m2'],params['m2']])]])
-        A = A - np.eye(params['m1'] + params['m2'])
-        A[params['m1']-1,params['m1']] = 1
-        A[params['m1'],params['m1']-1] = 1
-        G = nx.from_numpy_matrix(A)   
-        for i in G:
-            G.nodes[i]['block'] = np.mod(i,params['m1'])
+    pos, color = skd.make_swiss_roll(n_samples=params['n'], noise=params['noise'], random_state=params['seed'])    
+    for i, _pos in enumerate(pos):
+        G.add_node(i, pos = _pos, color = color[i])
 
-    elif whichgraph == 'complete':
+    return G, pos, params
+
+
+def generate_S(params = {'n': 300, 'elev': 10, 'azim': 290,
+                         's': 1.2, 'similarity': 'knn', 'similarity_par': 10,
+                         'seed': 0}):
+    
+    G = nx.Graph()
+    G.graph['name'] = 'S'
+    params['typ'] = 'pointcloud'
+    
+    pos, color = skd.samples_generator.make_s_curve(params['n'], random_state=params['seed'])
+    for i, _pos in enumerate(pos):
+        G.add_node(i, pos = _pos, color = color[i])
+        
+    return G, pos, params
+
+
+# =============================================================================
+# 
+# =============================================================================
+def graphs(whichgraph, params):
+    
+                
+    if whichgraph == 'complete':
         tpe ='graph'
         G = nx.complete_graph(params['n'])
 
@@ -196,35 +397,6 @@ def graphs(whichgraph, params):
             
         G = G.to_undirected()        
         
-    elif whichgraph == 'clique_of_cliques':
-        tpe = 'graph'
-        m = params['m']
-        levels = params['n']
-        N = m**levels
-        L = params['L']
-        
-        A = np.zeros([N,N])
-        for l in range(levels):   
-            for i in range(0,N,N//(m**l)):
-                for j in range(N//(m**l)):
-                    for k in range(j+1,N//(m**l)):
-                        A[i+j,i+k] = 0
-   
-            for i in range(0,N,N//(m**l)):
-                for j in range(N//(m**l)):
-                    for k in range(j+1,N//(m**l)):
-                        A[i+j,i+k] = \
-                        (l-levels+m+1)**13/m**13*np.random.binomial(1,(l-levels+m+1)**9/m**9)
-                        
-        pos = np.zeros([N,2])
-        
-        for i in range(levels):
-            for k in range(m**(i+1)):
-                pos[k*N//(m**(i+1)) : (k+1)*N//(m**(i+1)), :] += \
-                [L/(3**i)*np.cos((k % m)*2*np.pi/m), L/(3**i)*np.sin((k % m)*2*np.pi/m)]
-        
-        A = A + A.T
-        G = nx.from_numpy_matrix(A)
         
     elif whichgraph == 'grid':
         tpe = 'graph'
@@ -340,25 +512,6 @@ def graphs(whichgraph, params):
         tpe = 'graph'
         G = nx.erdos_renyi_graph(params['n'], params['p'], seed=params['seed'])  
     
-    elif whichgraph == 'Fan':
-        tpe = 'graph'
-        G = nx.planted_partition_graph(params['l'], params['g'], params['p_in'], params['p_out'], params['seed'])   
-        
-        for i,j in G.edges:
-            if G.nodes[i]['block'] == G.nodes[j]['block']:
-                G[i][j]['weight'] = params['w_in']
-            else:
-                G[i][j]['weight'] = 2 - params['w_in']
-            
-        labels_gt = []
-        for i in range(params['l']):
-            labels_gt = np.append(labels_gt,i*np.ones(params['g']))
-            
-        for n in G.nodes:
-            G.nodes[n]['block'] = labels_gt[n-1]   
-            
-        G = nx.convert_node_labels_to_integers(G, label_attribute='old_label') 
-    
     elif whichgraph == 'football':
         tpe = 'graph'
         G = nx.read_gml('datasets/football.gml')
@@ -367,58 +520,12 @@ def graphs(whichgraph, params):
     elif whichgraph == 'frucht':
         tpe = 'graph'
         G = nx.frucht_graph()    
-      
-    elif whichgraph == 'GN':
-        tpe = 'graph'
-        G = nx.planted_partition_graph(params['l'], params['g'], params['p_in'], params['p_out'], seed=params['seed'])
-            
-        labels_gt = []
-        for i in range(params['l']):
-            labels_gt = np.append(labels_gt,i*np.ones(params['g']))
-            
-        for n in G.nodes:
-            G.nodes[n]['block'] = labels_gt[n-1]    
     
     elif whichgraph == 'gnr':
         tpe = 'graph'
         #directed growing network
         G = nx.gnr_graph(params['n'], params['p'])
-
-    elif whichgraph == 'karate':
-        tpe = 'graph'
-        G = nx.karate_club_graph()
-        
-        for i,j in G.edges:
-            G[i][j]['weight']= 1.
-    
-        for i in G:
-            if G.nodes[i]['club'] == 'Mr. Hi':
-                G.nodes[i]['block'] = 0
-                G.nodes[i]['color'] = 0
-            else:
-                G.nodes[i]['block'] = 1
-                G.nodes[i]['color'] = 1
-    
-    elif whichgraph == 'LFR':
-        tpe = 'graph'        
-        command = params['scriptfolder'] + \
-        " -N " + str(params['n']) + \
-        " -t1 " + str(params['tau1']) + \
-        " -t2 " + str(params['tau2']) + \
-        " -mut " + str(params['mu']) + \
-        " -muw " + str(params['mu']) + \
-        " -maxk " + str(params['n']) + \
-        " -k " + str(params['k']) + \
-        " -name " + params['outfolder'] + "data"
-        
-        os.system(command)
-        G = nx.read_weighted_edgelist(params['outfolder'] +'data.nse', nodetype=int, encoding='utf-8')
-        for e in G.edges:
-            G.edges[e]['weight'] = 1
-            
-        labels = np.loadtxt(params['outfolder'] +'data.nmc',usecols=1,dtype=int)    
-        for n in G.nodes:
-            G.nodes[n]['block'] = labels[n-1]    
+          
     
     elif whichgraph == 'krackhardt':
         tpe = 'graph'
@@ -467,16 +574,6 @@ def graphs(whichgraph, params):
             pos[i] = [posx[G.nodes[i]['old_label']-1],posy[G.nodes[i]['old_label']-1]]
             #pos[i]= [posx[i-1],posy[i-1]]
 
-    elif whichgraph == 'S':   
-        tpe = 'pointcloud'
-        pos, color = skd.samples_generator.make_s_curve(params['n'], random_state=params['seed'])
-        for i, _pos in enumerate(pos):
-            G.add_node(i, pos = _pos, color = color[i])
-
-    elif whichgraph == 'scale-free':
-        tpe = 'graph'
-        G = nx.scale_free_graph(params['n'])
-        G = G.to_undirected()
 
     elif whichgraph == 'triangle_of_triangles':  
         tpe = 'graph'
@@ -522,12 +619,7 @@ def graphs(whichgraph, params):
     elif whichgraph == 'SM':
         tpe = 'graph'
         G = nx.newman_watts_strogatz_graph(params['n'], params['k'], params['p'])    
-        
-    elif whichgraph == 'swiss-roll':
-        tpe = 'pointcloud'
-        pos, color = skd.make_swiss_roll(n_samples=params['n'], noise=params['noise'], random_state=params['seed'])    
-        for i, _pos in enumerate(pos):
-            G.add_node(i, pos = _pos, color = color[i])
+          
  
     elif whichgraph == 'star':
         tpe = 'graph'
