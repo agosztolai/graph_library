@@ -27,31 +27,41 @@ import sys
 # =============================================================================
 # Generate one graph    
 # =============================================================================
-def generate(whichgraph, params=None, plot=True, save=True, outfolder=''):
-    
-    print('\nGraph: ' + whichgraph)
+def generate(whichgraph, params=None, plot=True, save=True, outfolder=''):    
     
     if params == None:
         G, pos =  getattr(sys.modules[__name__], "generate_%s" % whichgraph)()
     else:
         G, pos =  getattr(sys.modules[__name__], "generate_%s" % whichgraph)(params)
     
+    print('\nGraph: ' + whichgraph)
     print('\nParameters:', params) 
     
-    G.graph['name'] = whichgraph
+    G.graph['name'] = whichgraph        
     
+    #Generate similarity matrix
+    if len(G.edges)==0:
+        G = similarity_matrix(G, sim=params['similarity'], par=params['k'], symmetric=True)
+        
     #check if graph is connected    
     if not nx.is_connected(G):
         print('Graph is disconnected!!')
         
     #Assign positional information to nodes    
-    G = assign_graph_metadata(G, pos)   
-
+    G = assign_graph_metadata(G, pos)  
+    
     #Plot graph       
-    plot_graph(G, node_colors='k', plot3D=False, outfolder=outfolder) 
+    if plot:
+        if 'color' in G.nodes[1]:
+            color = 'custom'
+        else:
+            color = 'k'
+            
+        plot_graph(G, node_colors=color, outfolder=outfolder) 
     
     #save graph
-    nx.write_gpickle(G, outfolder + whichgraph + ".gpickle")
+    if save:
+        nx.write_gpickle(G, outfolder + whichgraph + ".gpickle")
     
     return G
 
@@ -101,9 +111,6 @@ def similarity_matrix(G, sim=None, par=None, symmetric=True):
     pos = nx.get_node_attributes(G,'pos')
     pos = np.reshape([pos[i] for i in range(n)],(n,len(pos[0])))
 
-    color = nx.get_node_attributes(G,'color')
-    color = [color[i] for i in range(n)]
-
     if sim=='euclidean' or sim=='minkowski':
         A = squareform(pdist(pos, sim))
         
@@ -124,7 +131,8 @@ def similarity_matrix(G, sim=None, par=None, symmetric=True):
         
     for i in range(n):
         for j in range(n):
-            G.add_edge(i,j, weight = A[i,j])
+            if np.abs(A[i,j])>0:
+                G.add_edge(i,j, weight = A[i,j])
 
     return G
      
@@ -153,7 +161,7 @@ def assign_graph_metadata(G, pos=None, color=None):
 # =============================================================================
 # plot graph
 # =============================================================================
-def plot_graph(G, node_colors='k', plot3D=False, outfolder='', params=None):
+def plot_graph(G, node_colors='k', outfolder='', params=None):
     
     if outfolder is None:
         outfolder = '.'
@@ -161,25 +169,17 @@ def plot_graph(G, node_colors='k', plot3D=False, outfolder='', params=None):
     try:
         whichgraph = G.graph['name']
     except: 
-        pass
-    else:
         whichgraph='graph'
+        pass       
         
-    if plot3D:
-        if len(G.nodes[1]['pos'])==3:
+    if len(G.nodes[1]['pos'])==3:
             fig = plot_graph_3D(G, node_colors=node_colors, params=params)  
             fig.savefig(outfolder + whichgraph + '.svg')
-        else:
-            raise Exception('For 3D plots a triple needs to be an attribute \
-                             of each node in the G networkx object')
-        
-    else:
-        if len(G.nodes[1]['pos'])==2:
+    elif len(G.nodes[1]['pos'])==2:
             fig = plot_graph_2D(G, node_colors)  
             fig.savefig(outfolder + whichgraph + '.svg')
-        else:
-            raise Exception('For 2D plots a pair needs to be an attribute \
-                             of each node in the G networkx object')
+    else:
+        raise Exception('Need to specify positions to plot')
             
 
 def plot_graph_3D(G, node_colors='custom', edge_colors=[], params=None):
@@ -189,7 +189,7 @@ def plot_graph_3D(G, node_colors='custom', edge_colors=[], params=None):
 
     pos = nx.get_node_attributes(G, 'pos')  
                      
-    xyz = np.array([pos[i] for i in range(len(pos))])
+    xyz = np.array([pos[i] for i in range(n)])
         
     #node colors
     if node_colors=='degree':
@@ -728,7 +728,7 @@ def generate_scale_free(params = {'n': 100}, seed=None):
     return G, None
 
 
-def generate_swiss_roll(params = {'n': 300, 'noise': 0., 'elev': 10, 'azim': 270,
+def generate_swiss_roll(params = {'n': 100, 'noise': 0., 'elev': 10, 'azim': 270,
                                   'similarity': 'knn', 'similarity_par': 10}, seed=None):
     if seed is not None:
         params['seed'] = seed
