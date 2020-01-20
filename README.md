@@ -11,38 +11,28 @@ pip install -e .
 ### To generate a graph
 
 ```
-from graph_library import graph_generator
-gg = graph_generator()
-gg.whichgraph = 'barbell'
-gg.file = 'graph_params'
-gg.generate()
-G = gg.G
+from graph_library import generate
+
+whichgraph = 'barbell'
+G = generate(whichgraph, params=None, plot=True, save=True, outfolder='')
 ```
+Select the parameter whichgraph from the currently implemented graphs found below.
 
 The .gpickle files will be saved in ~/whichgraph/
 
-### Generate a dataset in the same way (Swiss-roll in this case)
+### Generate a dataset in the same way (Swiss-roll in this case) then compute the similarity matrix
 ```
-gg.whichgraph = 'swiss-roll'
-G = gg.generate()
-```
+whichgraph = 'swiss-roll'
+G = generate(whichgraph, params=None, plot=False, save=True, outfolder='')
+``` 
 
 ### To also generate a graph by computing a similarity matrix (k-nearest neighbours in this case) use
 
 ```
-G = gg.generate(similarity='knn')
+G = similarity_matrix(G, sim='knn', par=10, symmetric=True)
 ```
 
-### Default arguments
-```
-whichgraph='barbell' #graph type - see below
-file='graph_params' #parameter file
-folder='./' #output folder
-nsamples=1 #number of of the graph (in case it is stochastically generated, the seed is set in the parameter file)
-save=True #save
-```
-
-Examples of standard parameters are included in the graph_params.yaml file. The script automatically saves a figure of the graph by default. 
+Look at similarity_matrix() in graph_library.py to see the implemented options and the meaning of the parameter par.
 
 ## Currently includes the following graphs and datasets (whichgraph)
 
