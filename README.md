@@ -51,9 +51,9 @@ Look at ```similarity_matrix()``` in ```graph_library.py``` to see the implement
 **gnr** : directed growing network\
 **karate** : Zachary's karate club\
 **LFR** : Lancichinetti-Fortunato-Radicchi benchmark\ 
-**krackhardt** :\ 
-**miserable** :\ 
-**netscience**:\
+**krackhardt** : \ 
+**miserable** : \ 
+**netscience**: \
 **scalefree**: \   
 **S** : S-curve\
 **SM** : small-world network\
