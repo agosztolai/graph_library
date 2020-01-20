@@ -18,8 +18,6 @@ G = generate(whichgraph, params=None, plot=True, save=True, outfolder='')
 ```
 Select the parameter ```whichgraph``` from the currently implemented graphs found below. See also ```graph_library.py``` for the possible parameters to be passed via ```params```.
 
-The .gpickle files will be saved in ~/whichgraph/
-
 ### Generate a dataset in the same way (Swiss-roll in this case) then compute the similarity matrix
 ```
 whichgraph = 'swiss-roll'
