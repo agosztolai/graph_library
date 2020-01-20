@@ -16,7 +16,7 @@ from graph_library import generate
 whichgraph = 'barbell'
 G = generate(whichgraph, params=None, plot=True, save=True, outfolder='')
 ```
-Select the parameter whichgraph from the currently implemented graphs found below.
+Select the parameter ```whichgraph``` from the currently implemented graphs found below. See also ```graph_library.py``` for the possible parameters to be passed via ```params```.
 
 The .gpickle files will be saved in ~/whichgraph/
 
@@ -32,7 +32,7 @@ G = generate(whichgraph, params=None, plot=False, save=True, outfolder='')
 G = similarity_matrix(G, sim='knn', par=10, symmetric=True)
 ```
 
-Look at similarity_matrix() in graph_library.py to see the implemented options and the meaning of the parameter par.
+Look at ```similarity_matrix()``` in ```graph_library.py``` to see the implemented options and the meaning of the parameter par.
 
 ## Currently includes the following graphs and datasets (whichgraph)
 
@@ -64,7 +64,7 @@ Look at similarity_matrix() in graph_library.py to see the implemented options a
 **swiss-roll** : Swiss-roll dataset\
 **torus**\
 **tree**\
-**tutte**\
+**tutte**
 
 
 
