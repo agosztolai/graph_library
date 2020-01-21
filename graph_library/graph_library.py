@@ -28,7 +28,6 @@ import sys
 # Generate one graph    
 # =============================================================================
 def generate(whichgraph, params=None, plot=True, save=True, outfolder=''):    
-    
     if params == None:
         G, pos =  getattr(sys.modules[__name__], "generate_%s" % whichgraph)()
     else:
@@ -681,11 +680,13 @@ def generate_powergrid(params = {}):
     G = nx.Graph() #empty graph
     G.add_edges_from(edges) #add edges        
         
+    G = nx.convert_node_labels_to_integers(G, label_attribute='old_label')
     #create the position vector for plotting
     for i in G.nodes():
         pos[i] = [posx[G.nodes[i]['old_label']-1],posy[G.nodes[i]['old_label']-1]]
         #pos[i]= [posx[i-1],posy[i-1]] 
 
+    return G, pos 
 
 def generate_powerlaw(params = {}):
 
