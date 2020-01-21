@@ -187,17 +187,14 @@ def plot_graph_3D(G, node_colors='custom', edge_colors=[], params=None):
     n = G.number_of_nodes()
     m = G.number_of_edges()
 
-    pos = nx.get_node_attributes(G, 'pos')  
-                     
-    xyz = np.array([pos[i] for i in range(n)])
-        
+    pos = nx.get_node_attributes(G, 'pos')
+    pos = np.array([pos[i] for i in range(n)])    
+    node_colors = list(nx.get_node_attributes(G, 'color').values())
+           
     #node colors
     if node_colors=='degree':
         edge_max = max([G.degree(i) for i in range(n)])
         node_colors = [plt.cm.plasma(G.degree(i)/edge_max) for i in range(n)] 
-    elif node_colors=='custom':
-        node_colors = nx.get_node_attributes(G, 'color')
-        node_colors = np.array([node_colors[i] for i in range(n)])  
     else:
         node_colors = 'k'
      
@@ -218,12 +215,12 @@ def plot_graph_3D(G, node_colors='custom', edge_colors=[], params=None):
         fig = plt.figure(figsize=(10,7))
         ax = Axes3D(fig)
                    
-        ax.scatter(xyz[:,0], xyz[:,1], xyz[:,2], c=node_colors, s=200, edgecolors='k', alpha=0.7)
+        ax.scatter(pos[:,0], pos[:,1], pos[:,2], c=node_colors, s=200, edgecolors='k', alpha=0.7)
            
         for i,j in enumerate(G.edges()): 
-            x = np.array((xyz[j[0]][0], xyz[j[1]][0]))
-            y = np.array((xyz[j[0]][1], xyz[j[1]][1]))
-            z = np.array((xyz[j[0]][2], xyz[j[1]][2]))
+            x = np.array((pos[j[0]][0], pos[j[1]][0]))
+            y = np.array((pos[j[0]][1], pos[j[1]][1]))
+            z = np.array((pos[j[0]][2], pos[j[1]][2]))
                    
             ax.plot(x, y, z, c=edge_color[i], alpha=0.3, linewidth = width[i])
     
@@ -244,7 +241,6 @@ def plot_graph_3D(G, node_colors='custom', edge_colors=[], params=None):
 
 def plot_graph_2D(G, node_colors='cluster'):      
 
-    pos = nx.get_node_attributes(G, 'pos')     
     pos = list(nx.get_node_attributes(G,'pos').values())
 
     if node_colors=='cluster' and 'block' in G.nodes[1]:
