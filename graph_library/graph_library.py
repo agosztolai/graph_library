@@ -27,14 +27,14 @@ import sys
 # =============================================================================
 # Generate one graph    
 # =============================================================================
-def generate(whichgraph, params=None, plot=True, save=True, outfolder=''):    
+def generate(whichgraph, params=None, plot=False, save=False, outfolder=''):    
     if params == None:
         G, pos =  getattr(sys.modules[__name__], "generate_%s" % whichgraph)()
     else:
         G, pos =  getattr(sys.modules[__name__], "generate_%s" % whichgraph)(params)
     
-    print('\nGraph: ' + whichgraph)
-    print('\nParameters:', params) 
+    #print('\nGraph: ' + whichgraph)
+    #print('\nParameters:', params) 
     
     G.graph['name'] = whichgraph        
     
