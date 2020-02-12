@@ -373,7 +373,7 @@ def generate_dumbbell_of_stars(params = {'n': 15, 'm': 10}):
     return G, None
 
 
-def generate_clique_of_cliques(params = {'m':5, 'n': 3, 'L': 500}, seed=None):
+def generate_clique_of_cliques(params = {'m':5, 'n': 3, 'L': 500, 'w':[1, 10, 100], 'p':[0.01, 0.1, 1]}, seed=None):
     
     if seed is not None:
         params['seed'] = seed
@@ -395,7 +395,7 @@ def generate_clique_of_cliques(params = {'m':5, 'n': 3, 'L': 500}, seed=None):
             for j in range(N//(m**l)):
                 for k in range(j+1,N//(m**l)):
                     A[i+j,i+k] = \
-                    (l-levels+m+1)**13/m**13*np.random.binomial(1,(l-levels+m+1)**9/m**9)
+                    params['w'][l]*np.random.binomial(1,params['p'][l])
                         
     pos = np.zeros([N,2])
         
