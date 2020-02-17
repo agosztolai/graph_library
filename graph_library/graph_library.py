@@ -339,7 +339,7 @@ def generate_barbell_noisy(params = {'m1': 7, 'm2': 0, 'noise': 0.5}, seed=None)
     return G, None
 
 
-def generate_barbell_asy(params = {'m1': 7, 'm2': 0}):
+def generate_barbell_asy(params = {'m1': 7, 'm2': 5}):
     
     A = np.block([[np.ones([params['m1'], params['m1']]), np.zeros([params['m1'],params['m2']])],\
                    [np.zeros([params['m2'],params['m1']]), np.ones([params['m2'],params['m2']])]])
