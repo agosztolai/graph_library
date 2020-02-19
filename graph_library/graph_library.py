@@ -27,6 +27,9 @@ import sys
 # =============================================================================
 # Generate one graph    
 # =============================================================================
+
+_path = os.path.dirname(__file__)
+
 def generate(whichgraph, params=None, plot=False, save=False, outfolder=''):    
     if params == None:
         G, pos =  getattr(sys.modules[__name__], "generate_%s" % whichgraph)()
@@ -669,9 +672,9 @@ def generate_netscience(params = {}):
  
     
 def generate_powergrid(params = {}):
-    
-    edges    = np.genfromtxt('../datasets/UCTE_edges.txt')
-    location = np.genfromtxt('../datasets/UCTE_nodes.txt')
+#
+    edges    = np.genfromtxt(os.path.join(_path, '../datasets/UCTE_edges.txt'))
+    location = np.genfromtxt(os.path.join(_path, '../datasets/UCTE_nodes.txt'))
     posx = location[:,1]
     posy = location[:,2]
     pos  = {}
