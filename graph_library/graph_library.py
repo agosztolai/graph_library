@@ -12,18 +12,6 @@ import sklearn.neighbors as skn
 #import yaml as yaml
 import sys
 
-'''
-# =============================================================================
-# Library of standard graphs
-# =============================================================================
-'''   
-#this is for compatibility with PyGenStability
-#        if 'block' in G.nodes[1]:
-#            for i in G:
-#                G.nodes[i]['old_label'] = str(G.nodes[i]['block'])
-#            G = nx.convert_node_labels_to_integers(G, label_attribute='old_label') 
-
-
 # =============================================================================
 # Generate one graph    
 # =============================================================================
