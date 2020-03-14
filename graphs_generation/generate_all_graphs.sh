@@ -1,0 +1,12 @@
+python generate_single_graph.py barbell
+python generate_single_graph.py karate
+python generate_single_graph.py clique 
+python generate_single_graph.py erdos_renyi
+python generate_single_graph.py SBM 
+python generate_single_graph.py clique_of_cliques
+python generate_single_graph.py powergrid 
+python generate_single_graph.py dolphin
+python generate_single_graph.py football
+python generate_single_graph.py grid 
+python generate_single_graph.py miserable 
+python generate_single_graph.py netscience

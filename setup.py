@@ -11,7 +11,5 @@ setup(
                           'scipy', 
                           'networkx',
                           'sklearn',
-                          'pyyaml',
                           'matplotlib'],
-        include_package_data = True
-      )
+)

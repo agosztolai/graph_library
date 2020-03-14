@@ -1,1 +1,1 @@
-from .graph_library import *
+from .graph_library import generate
