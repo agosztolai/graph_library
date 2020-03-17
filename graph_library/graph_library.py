@@ -255,7 +255,7 @@ def generate_barbell(params = {'m1': 7, 'm2': 0}):
     G = nx.barbell_graph(params['m1'], params['m2'])
     
     for i in G:
-        G.nodes[i]['block'] = np.mod(i,params['m1'])
+        G.nodes[i]['block'] = np.mod(i, params['m1'])
         
     return G, None
 
@@ -460,7 +460,7 @@ def generate_GN(params = {'l': 4, 'g': 32, 'p_in': 0.4, 'p_out': 0.2}, seed=0):
         
     labels_gt = []
     for i in range(params['l']):
-        labels_gt = np.append(labels_gt,i*np.ones(params['g']))
+        labels_gt = np.append(labels_gt, i*np.ones(params['g']))
             
     for n in G.nodes:
         G.nodes[n]['block'] = labels_gt[n-1]
@@ -546,7 +546,7 @@ def generate_delaunay_grid(params = {'n': 10}, seed=None):
     return G, pos
 
 
-def generate_gnr(param = {'n': 20, 'p': 0.2}):
+def generate_gnr(params = {'n': 20, 'p': 0.2}):
     
     G = nx.gnr_graph(params['n'], params['p'])
 
@@ -744,19 +744,6 @@ def generate_S(params = {'n': 300, 'elev': 10, 'azim': 290,
         G.add_node(i, pos = _pos, color = color[i])
         
     return G, pos
-
-
-def generate_SBM(params={'sizes': [20, 15],'probs': [[10., 0.5,], [0.5, 10.,]]}, seed=None):
-    
-    if seed is not None:
-        params['seed'] = seed
-        
-    G = nx.stochastic_block_model(params['sizes'], np.array(params['probs'])/params['sizes'][0], seed=params['seed'])
-    
-    for i,j in G.edges:
-        G[i][j]['weight'] = 1.
-
-    return G, None
 
 
 def generate_NWS(params = {'n': 50, 'k': 2, 'p': 0.3}):
