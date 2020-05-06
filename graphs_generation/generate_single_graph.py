@@ -4,7 +4,7 @@ import os
 import yaml
 
 import matplotlib.pyplot  as plt
-from graph_library import generate
+from graph_library import generate, plotting
 
 graph_name = sys.argv[-1]
 
@@ -15,3 +15,6 @@ if not os.path.exists(outfolder):
 print('Generating graph', graph_name)
 graph_params = yaml.full_load(open("graph_params.yaml", "rb"))[graph_name]
 graph = generate(graph_name, params=graph_params, plot=True, save=True, outfolder=outfolder)
+
+plotting.plot_graph(graph)
+plt.show()

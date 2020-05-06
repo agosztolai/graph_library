@@ -15,6 +15,28 @@ import sys
 from . import utils
 
 
+def generate_multiscale(params):
+    """Multiscale graph.""" 
+    block_sizes = params['block_sizes']
+    block_p = params['block_p']
+
+    adjacency_matrix = np.zeros([block_sizes[0], block_sizes[0]])
+    for size, p in zip(block_sizes, block_p):
+        for i in range(int(block_sizes[0] / size)): 
+            adjacency_matrix[i*size:(i+1)*size, i*size:(i+1)*size] = np.random.binomial(1,  p, size**2).reshape(size, size)
+
+    adjacency_matrix = 0.5 * (adjacency_matrix  + adjacency_matrix.T)
+    adjacency_matrix -= np.diag(np.diag(adjacency_matrix))
+    #plt.figure()
+    #plt.imshow(adjacency_matrix)
+    #plt.show()
+
+    graph = nx.Graph(nx.from_numpy_matrix(adjacency_matrix))
+    utils.set_force_position(graph)
+    utils.set_constant_weights(graph)
+    return graph
+
+
 def generate_karate(params=None):
     """karate clube graph"""
     graph = nx.karate_club_graph()

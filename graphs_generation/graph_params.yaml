@@ -1,3 +1,7 @@
+multiscale:
+    block_sizes: [120, 60] #, 20]
+    block_p: [0.022, 0.1] #, 0.4] 
+
 barbell:
     seed: 0
     m1: 7
