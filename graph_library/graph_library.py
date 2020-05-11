@@ -513,12 +513,12 @@ def generate_2grid(params = {'n': 10}):
     return G, pos
 
 
-def generate_delaunay_grid(params = {'n': 10}, seed=None):
+def generate_delaunay_grid(params = {'n': 10}):
     
     from scipy.spatial import Delaunay
     
-    if seed is not None:
-        params['seed'] = seed
+    if 'seed' not in params.keys():
+        params['seed'] = None
         
     np.random.seed(params['seed'])
     
@@ -553,12 +553,12 @@ def generate_gnr(params = {'n': 20, 'p': 0.2}):
     return G, None
 
 
-def generate_grid_delaunay_nonunif(params = {'n': 10}, seed=None):
+def generate_grid_delaunay_nonunif(params = {'n': 10}):
     
     from scipy.spatial import Delaunay
         
-    if seed is not None:
-        params['seed'] = seed
+    if 'seed' not in params.keys():
+        params['seed'] = None
         
     np.random.seed(params['seed'])
     x = np.linspace(0,1,params['n'])
@@ -608,10 +608,10 @@ def generate_krackhardt(params = {}):
 
 def generate_LFR(params = {'n':1000, 'tau1': 2, 'tau2': 2, 'mu': 0.5, 'k': 20, 
                            'minc': 10, 'maxc': 50, 'scriptfolder': './datasets/LFR-Benchmark/lfrbench_udwov', 
-                           'outfolder': '/data/AG/geocluster/LFR/'}, seed=None):
+                           'outfolder': '/data/AG/geocluster/LFR/'}):
 
-    if seed is not None:
-        params['seed'] = seed
+    if 'seed' not in params.keys():
+        params['seed'] = None
         
     command = params['scriptfolder'] + \
         " -N " + str(params['n']) + \
@@ -700,15 +700,50 @@ def generate_ring_of_cliques(params = {'m': 5, 'n': 6}):
             posx[i*params['n'] + j] = np.cos(x1[i]) + 0.5*np.cos(x2[j] + x1[i] + 2*np.pi*3/5)
             posy[i*params['n'] + j] = np.sin(x1[i]) + 0.5*np.sin(x2[j] + x1[i] + 2*np.pi*3/5)
                 
-    pos = [ [posx[i],posy[i]] for i in range(params['m']*params['n'])] 
+    pos = [ [posx[i], posy[i]] for i in range(params['m']*params['n'])] 
     
     return G, pos 
 
 
-def generate_scale_free(params = {'n': 100}, seed=None):
+def generate_SBM(params = {'n':[30,30,30,30],
+                           'p':[[0.8, 0.02, 0.1, 0.02],
+                                [0.02, 0.8, 0.02, 0.1],
+                                [0.1, 0.02, 0.8, 0.02],
+                                [0.02, 0.1, 0.02, 0.8]]}):
     
-    if seed is not None:
-        params['seed'] = seed
+    if 'seed' not in params.keys():
+        params['seed'] = None
+    
+    G = nx.stochastic_block_model(params['n'], params['p'], seed=params['seed'])
+
+    def random_disk(circle_x=0, circle_y=0, circle_r=1):       
+        alpha = 2 * np.pi * np.random.uniform() # random angle
+        r = circle_r * np.sqrt(np.random.uniform()) # random radius
+        x = r * np.cos(alpha) + circle_x # x coord
+        y = r * np.sin(alpha) + circle_y # y coord
+        
+        return np.array([x,y])
+    
+    R=3
+
+    pos = {}
+    nc = len(params['n'])
+    node_seq = np.cumsum(params['n'])
+    for i in range(nc):
+        if i==0:
+            for n in range(node_seq[0]):
+                pos[n] = random_disk(R*np.sin(nc/2*np.pi*i), R*np.cos(nc/2*np.pi*i))
+        else:
+            for n in range(node_seq[i-1], node_seq[i]): 
+                pos[n] = random_disk(R*np.sin(nc/2*np.pi*i), R*np.cos(nc/2*np.pi*i))
+    
+    return G, pos
+
+
+def generate_scale_free(params = {'n': 100}):
+    
+    if 'seed' not in params.keys():
+        params['seed'] = None
 
     G = nx.scale_free_graph(params['n'])
     G = G.to_undirected()
@@ -717,9 +752,9 @@ def generate_scale_free(params = {'n': 100}, seed=None):
 
 
 def generate_swiss_roll(params = {'n': 100, 'noise': 0., 'elev': 10, 'azim': 270,
-                                  'similarity': 'knn', 'similarity_par': 10}, seed=None):
-    if seed is not None:
-        params['seed'] = seed
+                                  'similarity': 'knn', 'similarity_par': 10}):
+    if 'seed' not in params.keys():
+        params['seed'] = None
     
     G = nx.Graph()
     
@@ -731,10 +766,10 @@ def generate_swiss_roll(params = {'n': 100, 'noise': 0., 'elev': 10, 'azim': 270
 
 
 def generate_S(params = {'n': 300, 'elev': 10, 'azim': 290,
-                         's': 1.2, 'similarity': 'knn', 'similarity_par': 10}, seed=None):
+                         's': 1.2, 'similarity': 'knn', 'similarity_par': 10}):
     
-    if seed is not None:
-        params['seed'] = seed
+    if 'seed' not in params.keys():
+        params['seed'] = None
         
     G = nx.Graph()
     
