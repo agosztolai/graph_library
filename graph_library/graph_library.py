@@ -9,7 +9,6 @@ from scipy.spatial.distance import pdist, squareform
 from sklearn.metrics.pairwise import rbf_kernel
 import os
 import sklearn.neighbors as skn
-#import yaml as yaml
 import sys
 
 # =============================================================================
@@ -732,10 +731,10 @@ def generate_SBM(params = {'n':[30,30,30,30],
     for i in range(nc):
         if i==0:
             for n in range(node_seq[0]):
-                pos[n] = random_disk(R*np.sin(nc/2*np.pi*i), R*np.cos(nc/2*np.pi*i))
+                pos[n] = random_disk(R*np.cos(2*np.pi/nc*i), R*np.sin(2*np.pi/nc*i))
         else:
             for n in range(node_seq[i-1], node_seq[i]): 
-                pos[n] = random_disk(R*np.sin(nc/2*np.pi*i), R*np.cos(nc/2*np.pi*i))
+                pos[n] = random_disk(R*np.cos(2*np.pi/nc*i), R*np.sin(2*np.pi/nc*i))
     
     return G, pos
 
