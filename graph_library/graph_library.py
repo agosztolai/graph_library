@@ -705,15 +705,16 @@ def generate_ring_of_cliques(params = {'m': 5, 'n': 6}):
 
 
 def generate_SBM(params = {'n':[30,30,30,30],
-                           'p':[[0.8, 0.02, 0.1, 0.02],
-                                [0.02, 0.8, 0.02, 0.1],
-                                [0.1, 0.02, 0.8, 0.02],
-                                [0.02, 0.1, 0.02, 0.8]]}):
+                           'p':[[0.8, 0.1, 0.02, 0.02],
+                                [0.1, 0.8, 0.02, 0.02],
+                                [0.02, 0.02, 0.8, 0.1],
+                                [0.02, 0.02, 0.1, 0.8]]}):
     
     if 'seed' not in params.keys():
         params['seed'] = None
     
     G = nx.stochastic_block_model(params['n'], params['p'], seed=params['seed'])
+    np.random.seed(params['seed'])
 
     def random_disk(circle_x=0, circle_y=0, circle_r=1):       
         alpha = 2 * np.pi * np.random.uniform() # random angle
@@ -731,10 +732,10 @@ def generate_SBM(params = {'n':[30,30,30,30],
     for i in range(nc):
         if i==0:
             for n in range(node_seq[0]):
-                pos[n] = random_disk(R*np.cos(2*np.pi/nc*i), R*np.sin(2*np.pi/nc*i))
+                pos[n] = random_disk(R*np.cos(2*np.pi/nc*i - np.pi/4), R*np.sin(2*np.pi/nc*i - np.pi/4))
         else:
             for n in range(node_seq[i-1], node_seq[i]): 
-                pos[n] = random_disk(R*np.cos(2*np.pi/nc*i), R*np.sin(2*np.pi/nc*i))
+                pos[n] = random_disk(R*np.cos(2*np.pi/nc*i - np.pi/4), R*np.sin(2*np.pi/nc*i - np.pi/4))
     
     return G, pos
 
