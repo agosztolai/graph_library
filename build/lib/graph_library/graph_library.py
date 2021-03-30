@@ -17,7 +17,7 @@ import sys
 
 _path = os.path.dirname(__file__)
 
-def generate(whichgraph, params=None, plot=False, save=False, outfolder='./graphs'):    
+def generate(whichgraph, params=None, plot=False, save=False, outfolder=''):    
     if params == None:
         G, pos =  getattr(sys.modules[__name__], "generate_%s" % whichgraph)()
     else:
@@ -50,12 +50,7 @@ def generate(whichgraph, params=None, plot=False, save=False, outfolder='./graph
     
     #save graph
     if save:
-        i = 0
-        while os.path.exists(os.path.join(outfolder,f"{whichgraph}_{i}.gpickle")):
-            i += 1
-            
-        print(os.path.join(outfolder,f"{whichgraph}_{i}.gpickle"))
-        nx.write_gpickle(G, os.path.join(outfolder,f"{whichgraph}_{i}.gpickle"))
+        nx.write_gpickle(G, outfolder + whichgraph + ".gpickle")
     
     return G
 
@@ -63,30 +58,34 @@ def generate(whichgraph, params=None, plot=False, save=False, outfolder='./graph
 # =============================================================================
 # Generate many graphs
 # =============================================================================
-def generate_graph_family(whichgraph, params={}, nsamples=2, seed=None, plot=True, save=False, outfolder='./graphs'):
+def generate_graph_family(whichgraph, params={}, nsamples = 2, plot=True, outfolder=''):
     
-    if seed is None:
-        seed = 0
+    counter = 0    
+    if 'seed' not in params.keys():
+        params['seed'] = 0
         
-    #create a folder
-    if not os.path.isdir(outfolder):
-        os.mkdir(outfolder)
+    disconnected = 0    
+    while counter < nsamples and disconnected == 0:
+        params['seed'] += 1
+            
+        G = generate(whichgraph, params=None, plot=plot, save=False, outfolder=outfolder)
         
-    for i in range(nsamples):
-        params['seed'] = seed + i
+        if not nx.is_connected(G):
+            disconnected = 1
+            print('Graph is disconnected!!')
+        else: 
+            disconnected = 0
             
-        G = generate(whichgraph, params=params, plot=plot, save=False, outfolder=outfolder)
+            #create a folder
+            if not os.path.isdir(outfolder):
+                os.mkdir(outfolder)
             
-        #save
-        if save:
-            i = 0
-            while os.path.exists(os.path.join(outfolder,f"{whichgraph}_{i}.gpickle")):
-                i += 1
-                
-            print(os.path.join(outfolder,f"{whichgraph}_{i}.gpickle"))
-            nx.write_gpickle(G, os.path.join(outfolder,f"{whichgraph}_{i}.gpickle"))
-
-
+            #save
+            nx.write_gpickle(G, outfolder + whichgraph + ".gpickle")
+            
+            counter += 1
+            
+    
 # =============================================================================
 # similarity matrix
 # =============================================================================
@@ -314,11 +313,12 @@ def generate_karate(params = None):
     return G, None
 
 
-def generate_barbell_noisy(params = {'m1': 7, 'm2': 0, 'noise': 0.5}):        
+def generate_barbell_noisy(params = {'m1': 7, 'm2': 0, 'noise': 0.5}, seed=None):        
 
-    if 'seed' in params.keys():
-        np.random.seed(params['seed'])
+    if seed is not None:
+        params['seed'] = seed
         
+    np.random.seed(params['seed'])
     G = nx.barbell_graph(params['m1'], params['m2'])
     
     for i in G:
@@ -363,15 +363,16 @@ def generate_dumbbell_of_stars(params = {'n': 15, 'm': 10}):
     return G, None
 
 
-def generate_clique_of_cliques(params = {'m':5, 'n': 3, 'L': 500, 'w':[1, 10, 100], 'p':[0.01, 0.1, 1]}):
+def generate_clique_of_cliques(params = {'m':5, 'n': 3, 'L': 500, 'w':[1, 10, 100], 'p':[0.01, 0.1, 1]}, seed=None):
     
-    if 'seed' in params.keys():
-        np.random.seed(params['seed'])
+    if seed is not None:
+        params['seed'] = seed
         
     m = params['m']
     levels = params['n']
     N = m**levels
     L = params['L']
+    np.random.seed(params['seed'])
         
     A = np.zeros([N,N])
     for l in range(levels):   
@@ -399,22 +400,22 @@ def generate_clique_of_cliques(params = {'m':5, 'n': 3, 'L': 500, 'w':[1, 10, 10
     return G, pos
 
 
-def generate_erdos_renyi(params={'n': 50, 'p': 0.1}):
+def generate_erdos_renyi(params={'n': 50, 'p': 0.1}, seed=None):
     
-    if 'seed' in params.keys():
-        seed = params['seed']
+    if seed is not None:
+        params['seed'] = seed
         
-    G = nx.erdos_renyi_graph(params['n'], params['p'], seed=seed)  
+    G = nx.erdos_renyi_graph(params['n'], params['p'], seed=params['seed'])  
     
     return G, None
 
 
-def generate_Fan(params = {'w_in': 1.5, 'l': 4, 'g': 32, 'p_in': 0.125, 'p_out': 0.125}):
+def generate_Fan(params = {'w_in': 1.5, 'l': 4, 'g': 32, 'p_in': 0.125, 'p_out': 0.125}, seed=None):
     
-    if 'seed' not in params.keys():
-        params['seed']=None
+    if seed is not None:
+        params['seed'] = seed
         
-    G = nx.planted_partition_graph(params['l'], params['g'], params['p_in'], params['p_out'], seed=params['seed'])   
+    G = nx.planted_partition_graph(params['l'], params['g'], params['p_in'], params['p_out'], params['seed'])   
     
     for i,j in G.edges:
         if G.nodes[i]['block'] == G.nodes[j]['block']:
@@ -449,10 +450,10 @@ def generate_frucht(params = {}):
     return G, None
 
 
-def generate_GN(params = {'l': 4, 'g': 32, 'p_in': 0.4, 'p_out': 0.2}):
+def generate_GN(params = {'l': 4, 'g': 32, 'p_in': 0.4, 'p_out': 0.2}, seed=0):
     
-    if 'seed' not in params.keys():
-        params['seed']=None
+    if seed is not None:
+        params['seed'] = seed
         
     G = nx.planted_partition_graph(params['l'], params['g'], params['p_in'], params['p_out'], seed=params['seed'])
         
@@ -466,10 +467,10 @@ def generate_GN(params = {'l': 4, 'g': 32, 'p_in': 0.4, 'p_out': 0.2}):
     return G, None
 
 
-def generate_geometric(params = {'n': 50, 'p': 0.3}):   
+def generate_geometric(params = {'n': 50, 'p': 0.3}, seed = None):   
     
-    if 'seed' in params.keys():
-        np.random.seed(params['seed'])
+    if seed is not None:
+        params['seed'] = seed
         
     G = nx.random_geometric_graph(params['n'], params['p'])
     
@@ -515,8 +516,10 @@ def generate_delaunay_grid(params = {'n': 10}):
     
     from scipy.spatial import Delaunay
     
-    if 'seed' in params.keys():
-        np.random.seed(params['seed'])
+    if 'seed' not in params.keys():
+        params['seed'] = None
+        
+    np.random.seed(params['seed'])
     
     x = np.linspace(0,1,params['n'])
         
@@ -553,9 +556,10 @@ def generate_grid_delaunay_nonunif(params = {'n': 10}):
     
     from scipy.spatial import Delaunay
         
-    if 'seed' in params.keys():
-        np.random.seed(params['seed'])
+    if 'seed' not in params.keys():
+        params['seed'] = None
         
+    np.random.seed(params['seed'])
     x = np.linspace(0,1,params['n'])
         
     pos = []
@@ -602,15 +606,13 @@ def generate_krackhardt(params = {}):
     
 
 def generate_LFR(params = {'n':1000, 'tau1': 2, 'tau2': 2, 'mu': 0.5, 'k': 20, 
-                           'minc': 10, 'maxc': 50}):
+                           'minc': 10, 'maxc': 50, 'scriptfolder': './datasets/LFR-Benchmark/lfrbench_udwov', 
+                           'outfolder': '/data/AG/geocluster/LFR/'}):
 
     if 'seed' not in params.keys():
         params['seed'] = None
         
-    cwd = os.getcwd()
-    root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
-    script_folder = os.path.join(root_dir,'datasets/LFR-Benchmark/lfrbench_udwov')
-    command = script_folder + \
+    command = params['scriptfolder'] + \
         " -N " + str(params['n']) + \
         " -t1 " + str(params['tau1']) + \
         " -t2 " + str(params['tau2']) + \
@@ -618,16 +620,16 @@ def generate_LFR(params = {'n':1000, 'tau1': 2, 'tau2': 2, 'mu': 0.5, 'k': 20,
         " -muw " + str(params['mu']) + \
         " -maxk " + str(params['n']) + \
         " -k " + str(params['k']) + \
-        " -name " + os.path.join(cwd,'data')
+        " -name " + params['outfolder'] + "data"
         
     os.system(command)
     
-    G = nx.read_weighted_edgelist(os.path.join(cwd,'data.nse'), nodetype=int, encoding='utf-8')
+    G = nx.read_weighted_edgelist(params['outfolder'] +'data.nse', nodetype=int, encoding='utf-8')
     
     for e in G.edges:
         G.edges[e]['weight'] = 1
         
-    labels = np.loadtxt(os.path.join(cwd,'data.nmc'),usecols=1,dtype=int)    
+    labels = np.loadtxt(params['outfolder'] +'data.nmc',usecols=1,dtype=int)    
     for n in G.nodes:
         G.nodes[n]['block'] = labels[n-1]
         
@@ -710,9 +712,9 @@ def generate_SBM(params = {'n':[30,30,30,30],
     
     if 'seed' not in params.keys():
         params['seed'] = None
-    np.random.seed(params['seed'])
     
     G = nx.stochastic_block_model(params['n'], params['p'], seed=params['seed'])
+    np.random.seed(params['seed'])
 
     def random_disk(circle_x=0, circle_y=0, circle_r=1):       
         alpha = 2 * np.pi * np.random.uniform() # random angle
@@ -743,7 +745,7 @@ def generate_scale_free(params = {'n': 100}):
     if 'seed' not in params.keys():
         params['seed'] = None
 
-    G = nx.scale_free_graph(params['n'],seed=params['seed'])
+    G = nx.scale_free_graph(params['n'])
     G = G.to_undirected()
     
     return G, None
