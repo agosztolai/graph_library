@@ -601,24 +601,28 @@ def generate_krackhardt(params = {}):
     return G, None
     
 
-def generate_LFR(params = {'n':1000, 'tau1': 2, 'tau2': 2, 'mu': 0.5, 'k': 20, 
+def generate_LFR(params = {'n':1000, 'tau1': 2, 'tau2': 1, 'mut': 0.5, 'k': 20, 
                            'minc': 10, 'maxc': 50}):
 
     if 'seed' not in params.keys():
-        params['seed'] = None
+        params['seed'] = 0
         
     cwd = os.getcwd()
+    f= open(os.path.join(cwd,'seed.txt'),"w+")
+    f.write(str(params['seed']))
+        
     root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
     script_folder = os.path.join(root_dir,'datasets/LFR-Benchmark/lfrbench_udwov')
     command = script_folder + \
         " -N " + str(params['n']) + \
         " -t1 " + str(params['tau1']) + \
         " -t2 " + str(params['tau2']) + \
-        " -mut " + str(params['mu']) + \
-        " -muw " + str(params['mu']) + \
+        " -mut " + str(params['mut']) + \
+        " -muw " + str(params['mut']) + \
         " -maxk " + str(params['n']) + \
         " -k " + str(params['k']) + \
-        " -name " + os.path.join(cwd,'data')
+        " -name " + os.path.join(cwd,'data') + \
+        " -seed " + os.path.join(cwd,'seed.txt')
         
     os.system(command)
     

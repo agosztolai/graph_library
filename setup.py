@@ -10,7 +10,7 @@ setup(
         install_requires=['numpy', 
                           'scipy', 
                           'networkx',
-                          'sklearn',
+                          'scikit-learn',
                           'pyyaml',
                           'matplotlib'],
         include_package_data = True
